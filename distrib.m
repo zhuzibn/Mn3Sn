@@ -12,14 +12,20 @@ atomtype_=10*ones(natomW,natomL);
 for ctL=1:natomL
     for ctW=1:natomW
         if mod(ctW,4)==1 && mod(ctL,2)==0
+            %row 1, even column no atom
+            %no atom marked by 3
             atomtype_(ctW,ctL)=3;
         elseif mod(ctW,4)==3 && mod(ctL,2)==1
+            %row 3, odd column no atom
             atomtype_(ctW,ctL)=3;
         elseif mod(ctW,4)==1 && ctL==natomL
+            %row 1, remove the last atom to ensure complete triangle
             atomtype_(ctW,ctL)=3;
         elseif mod(ctW,4)==3 && ctL==natomL
+            %row 3, remove the last atom to ensure complete triangle
             atomtype_(ctW,ctL)=3;
         else
+            %have atom marked by 1
             atomtype_(ctW,ctL)=1;
         end
     end
@@ -64,6 +70,7 @@ for ctW = 1:natomW
                 coeffs_five_2(ctW,ctL) = sin(5*pi/6);
                 coeffs_five_3(ctW,ctL) = cos(5*pi/6);
             else
+                
             end
         end
     end

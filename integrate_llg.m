@@ -24,11 +24,10 @@ for ctL=1:natomL
             BDSOT(ctW,ctL)=BDSOTRE;
             BDSTT(ctW,ctL)=BDSTTRE;
         else
-            muigpu(ctW,ctL)=musTM;
-            scalgpu(ctW,ctL)=gamTM/(1+alp^2);%scale parameter
-            BDSOT(ctW,ctL)=BDSOTTM;
-            BDSTT(ctW,ctL)=BDSTTTM;
+
         end
+AsimnextL(1:2:end,:)=zeros(L,w);  
+
         if atomtype_(ctW,ctL)==1%local atom is RE
             if ctL==natomL
                 if bc
@@ -123,65 +122,7 @@ for ctL=1:natomL
             end
 
         elseif atomtype_(ctW,ctL)==0%local atom is TM
-            if ctL==natomL
-                if bc
-                    AsimnextL(ctW,ctL)=0;
-                else
-                    AsimnextL(ctW,ctL)=Jfefe*(atomtype_(ctW,ctL)==atomtype_(ctW,1))+...
-                        Jfegd*(~atomtype_(ctW,ctL)==atomtype_(ctW,1));
-                end
-            else
-                if atomtype_(ctW,ctL+1)==1%the other atom is RE
-                    AsimnextL(ctW,ctL)=Jfegd;
-                else%the other atom is TM
-                    AsimnextL(ctW,ctL)=Jfefe;
-                end
-            end
 
-            if ctL==1
-                if bc
-                    AsimpreviousL(ctW,ctL)=0;
-                else
-                    AsimpreviousL(ctW,ctL)=Jfefe*(atomtype_(ctW,ctL)==atomtype_(ctW,natomL))+...
-                        Jfegd*(~atomtype_(ctW,ctL)==atomtype_(ctW,natomL));
-                end
-            else
-                if atomtype_(ctW,ctL-1)==1%the other atom is RE
-                    AsimpreviousL(ctW,ctL)=Jfegd;
-                else%the other atom is TM
-                    AsimpreviousL(ctW,ctL)=Jfefe;
-                end
-            end
-
-            if ctW==natomW
-                if bc
-                    AsimpreviousW(ctW,ctL)=0;
-                else
-                    AsimpreviousW(ctW,ctL)=Jfefe*(atomtype_(ctW,ctL)==atomtype_(1,ctL))+...
-                        Jfegd*(~atomtype_(ctW,ctL)==atomtype_(1,ctL));
-                end
-            else
-                if atomtype_(ctW+1,ctL)==1%the other atom is RE
-                    AsimpreviousW(ctW,ctL)=Jfegd;
-                else%the other atom is TM
-                    AsimpreviousW(ctW,ctL)=Jfefe;
-                end
-            end
-
-            if ctW==1
-                if bc
-                    AsimnextW(ctW,ctL)=0;
-                else
-                    AsimnextW(ctW,ctL)=Jfefe*(atomtype_(ctW,ctL)==atomtype_(natomW,ctL))+...
-                        Jfegd*(~atomtype_(ctW,ctL)==atomtype_(natomW,ctL));
-                end
-            else
-                if atomtype_(ctW-1,ctL)==1%the other atom is RE
-                    AsimnextW(ctW,ctL)=Jfegd;
-                else%the other atom is TM
-                    AsimnextW(ctW,ctL)=Jfefe;
-                end
-            end
         end
     end
 end
@@ -312,7 +253,6 @@ while ~(ct3>ct3run)
         hex_z=-(AsimnextL.*mmznextL+AsimpreviousL.*mmzpreviousL+...
             AsimnextW.*mmznextW+AsimpreviousW.*mmzpreviousW+...
             AsimpreviousWleft.*mmzpreviousWleft+AsimpreviousWright.*mmzpreviousWright+AsimnextWleft.*mmznextWleft+AsimnextWright.*mmznextWright)./muigpu;
-        aaa = AsimnextL+AsimnextW+AsimnextWleft+AsimnextWright+AsimpreviousL+AsimpreviousW+AsimpreviousWleft+AsimpreviousWright;
 
         % hk_atom=Ksim./muigpu.*dot([coeffs_1,coeffs_2,coeffs_3],[mmxtmp,mmytmp,mmztmp]).*[coeffs_1,coeffs_2,coeffs_3];%hk_Fe in macrospin_model %anisotropy
         hani_x=Ksim./muigpu.*(coeffs_1.*mmxtmp+coeffs_2.*mmytmp+coeffs_3.*mmztmp).*coeffs_1;%hk_Fe in macrospin_model %anisotropy
