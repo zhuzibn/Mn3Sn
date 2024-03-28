@@ -1,4 +1,4 @@
-% 2D atomistic model for FiM
+%% 2D atomistic model for Mn3Sn
 % require nvidia GPU
 clear all;clc;close all;tic
 %% optional control
