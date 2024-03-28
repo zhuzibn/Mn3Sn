@@ -15,6 +15,7 @@ AsimpreviousWleft=zeros(natomW,natomL,'gpuArray');
 AsimpreviousWright=zeros(natomW,natomL,'gpuArray');
 AsimnextWleft=zeros(natomW,natomL,'gpuArray');
 AsimnextWright=zeros(natomW,natomL,'gpuArray');
+
 AsimnextL(2:2:natomW,:)=Jintra;
 AsimnextL(:,end)=0;
 
@@ -191,6 +192,7 @@ while ~(ct3>ct3run)
         hex_z=-(AsimnextL.*mmznextL+AsimpreviousL.*mmzpreviousL+...
             AsimnextW.*mmznextW+AsimpreviousW.*mmzpreviousW+...
             AsimpreviousWleft.*mmzpreviousWleft+AsimpreviousWright.*mmzpreviousWright+AsimnextWleft.*mmznextWleft+AsimnextWright.*mmznextWright)./muigpu;
+        %aaa = AsimnextL+AsimnextW+AsimnextWleft+AsimnextWright+AsimpreviousL+AsimpreviousW+AsimpreviousWleft+AsimpreviousWright;
 
         % hk_atom=Ksim./muigpu.*dot([coeffs_1,coeffs_2,coeffs_3],[mmxtmp,mmytmp,mmztmp]).*[coeffs_1,coeffs_2,coeffs_3];%hk_Fe in macrospin_model %anisotropy
         hani_x=Ksim./muigpu.*(coeffs_1.*mmxtmp+coeffs_2.*mmytmp+coeffs_3.*mmztmp).*coeffs_1;%hk_Fe in macrospin_model %anisotropy
@@ -221,7 +223,7 @@ while ~(ct3>ct3run)
         hhx=hex_x+hani_x+hdmi_x+hdipolex_+Hext(1)+Hthermalx;
         hhy=hex_y+hani_y+hdmi_y+hdipoley_+Hext(2)+Hthermaly;
         hhz=hex_z+hani_z+hdmi_z+hdipolez_+Hext(3)+Hthermalz;
-         if rk4==2%4th predictor-corrector
+        if rk4==2%4th predictor-corrector
             if ct3==1 && ~(ct1>3)
                 [sxx,syy,szz]=arrayfun(@atomgpurk4,mmxtmp,mmytmp,mmztmp,scalgpu,alp,...
                     tstep,hhx,hhy,hhz);
@@ -234,12 +236,22 @@ while ~(ct3>ct3run)
             [sxx,syy,szz]=arrayfun(@atomgpurk4,mmxtmp,mmytmp,mmztmp,psjSHEx,...
                 psjSHEy,psjSHEz,psjSTTx,psjSTTy,psjSTTz,scalgpu,alp,...
                 tstep,hhx,hhy,hhz,BDSOT,BFSOT,BDSTT,BFSTT);
+            for ctL=1:natomL
+                for ctW=1:natomW
+                    if atomtype_(ctW,ctL)==3
+                        sxx(ctW,ctL) = 0;
+                        syy(ctW,ctL) = 0;
+                        szz(ctW,ctL) = 0;
+                    end
+                end
+            end
         else%heun
             [sxx,syy,szz]=arrayfun(@atomgpu,mmxtmp,mmytmp,mmztmp,scalgpu,alp,...
                 tstep,hhx,hhy,hhz);%
         end
 
         mmx(:,:,ct1+1)=sxx; mmy(:,:,ct1+1)=syy; mmz(:,:,ct1+1)=szz;
+
         if enablefixedge
             mmx(:,1:fixededgeL,ct1+1)=mxleft;
             mmy(:,1:fixededgeL,ct1+1)=myleft;
