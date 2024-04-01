@@ -1,4 +1,4 @@
-% 2D atomistic model for FiM
+%% 2D atomistic model for Mn3Sn
 % require nvidia GPU
 clear all;clc;close all;tic
 %% optional control
@@ -50,7 +50,7 @@ if enablefixedge
     mzright=-1;  
 end
 %% system generation
-natomW=5;natomL=6;%行数为奇，列数为奇 
+natomW=9;natomL=9;%行数为奇，列数为奇 
 %note this is different to the x,y,z in h_ex or hdmi etc
 % compositionn=0.1;%composition percentage (X) of RE element, e.g. GdX(FeCo)1-X
 d=0.4e-9;%[m],lattice constant
@@ -119,7 +119,7 @@ T=100;%[K]
 %% time control
 gpusave=1e-12;%how often saving gpu data
 gpurun_number=150;
-tstep=2e-16;
+tstep=5e-16;
 savetstep=100;%this is used to reduce data size
 
 gpusteps=round(gpusave/tstep);

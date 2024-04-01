@@ -15,117 +15,57 @@ AsimpreviousWleft=zeros(natomW,natomL,'gpuArray');
 AsimpreviousWright=zeros(natomW,natomL,'gpuArray');
 AsimnextWleft=zeros(natomW,natomL,'gpuArray');
 AsimnextWright=zeros(natomW,natomL,'gpuArray');
-% if mod(ctW,2) %ctW奇数行
+
+AsimnextL(2:2:natomW,:)=Jintra;
+AsimnextL(:,end)=0;
+
+AsimpreviousL(2:2:natomW,:)=Jintra;
+AsimpreviousL(:,1)=0;
+
+AsimnextW(1:4:natomW,1:2:natomL)=Jintra;
+AsimnextW(2:4:natomW,1:2:natomL)=Jintra;
+AsimnextW(3:4:natomW,2:2:natomL)=Jintra;
+AsimnextW(4:4:natomW,2:2:natomL)=Jintra;
+AsimnextW(1,:)=0;AsimnextW(:,end)=0;
+
+AsimpreviousW(1:4:natomW,1:2:natomL)=Jintra;
+AsimpreviousW(2:4:natomW,2:2:natomL)=Jintra;
+AsimpreviousW(3:4:natomW,2:2:natomL)=Jintra;
+AsimpreviousW(4:4:natomW,1:2:natomL)=Jintra;
+AsimpreviousW(end,:)=0;AsimnextW(:,end)=0;
+
+AsimpreviousWleft(2:4:natomW,1:2:natomL)=Jintra;
+AsimpreviousWleft(4:4:natomW,2:2:natomL)=Jintra;
+AsimpreviousWleft(end,:)=0;AsimpreviousWleft(:,1)=0;
+
+AsimpreviousWright(1:4:natomW,1:2:natomL)=Jintra;
+AsimpreviousWright(3:4:natomW,2:2:natomL)=Jintra;
+AsimpreviousWright(end,:)=0;AsimpreviousWright(:,end)=0;
+
+AsimnextWleft(2:4:natomW,2:2:natomL)=Jintra;
+AsimnextWleft(4:4:natomW,1:2:natomL)=Jintra;
+AsimnextWleft(1,:)=0;AsimnextWleft(:,1)=0;
+
+AsimnextWright(1:4:natomW,1:2:natomL)=Jintra;
+AsimnextWright(3:4:natomW,2:2:natomL)=Jintra;
+AsimnextWright(1,:)=0;AsimnextWright(:,end)=0;
+
 for ctL=1:natomL
     for ctW=1:natomW
-        if atomtype_(ctW,ctL)==1%RE
+        if atomtype_(ctW,ctL)==1
             muigpu(ctW,ctL)=musRE;
             scalgpu(ctW,ctL)=gamRE/(1+alp^2);%scale parameter
             BDSOT(ctW,ctL)=BDSOTRE;
             BDSTT(ctW,ctL)=BDSTTRE;
-        else
-
-        end
-AsimnextL(1:2:end,:)=zeros(L,w);  
-
-        if atomtype_(ctW,ctL)==1%local atom is RE
-            if ctL==natomL
-                if bc
-                    AsimnextL(ctW,ctL)=0;
-                    AsimpreviousW(ctW,ctL)=0;
-                end
-            else
-                if mod(ctW,4)==2 || mod(ctW,4)==0 %第二行和第四行
-                    AsimnextL(ctW,ctL)=Jintra;
-                else
-                    AsimnextL(ctW,ctL)=0;
-                end
-            end
-
-            if ctL==1
-                if bc
-                    AsimpreviousL(ctW,ctL)=0;
-                    AsimpreviousWleft(ctW,ctL)=0;
-                end
-            else
-                if mod(ctW,4)==2 || mod(ctW,4)==0 %第二行和第四行
-                    AsimpreviousL(ctW,ctL)=Jintra;
-                else
-                    AsimpreviousL(ctW,ctL)=0;
-                end
-            end
-
-            if ctW==natomW
-                if bc
-                    AsimpreviousW(ctW,ctL)=0;
-                    AsimpreviousWleft(ctW,ctL)=0;
-                    AsimpreviousWright(ctW,ctL)=0;
-                end
-            else
-                if mod(ctW,4)==1
-                    if mod(ctL,2)==1
-                        if mod(ctL,2)==1
-                            AsimpreviousWright(ctW,ctL)=Jintra;
-                            AsimpreviousW(ctW,ctL)=Jintra;
-                        end
-                    end
-                elseif mod(ctW,4)==2
-                    if mod(ctL,2)==1
-                        AsimpreviousWleft(ctW,ctL)=Jintra;
-                    else
-                        AsimpreviousW(ctW,ctL)=Jintra;
-                    end
-                elseif mod(ctW,4)==3
-                    if mod(ctL,2)==0
-                        AsimpreviousWright(ctW,ctL)=Jintra;
-                        AsimpreviousW(ctW,ctL)=Jintra;
-                    end
-                elseif mod(ctW,4)==0
-                    if mod(ctL,2)==1
-                    AsimpreviousW(ctW,ctL)=Jintra;
-                    else
-                    AsimpreviousWleft(ctW,ctL)=Jintra;
-                    end
-                end
-            end
-
-            if ctW==1
-                if bc
-                    AsimnextW(ctW,ctL)=0;
-                    AsimnextWleft(ctW,ctL)=0;
-                    AsimnextWright(ctW,ctL)=0;
-                end
-            else
-                if mod(ctW,4)==1
-                    if mod(ctL,2)==1
-                        AsimnextWright(ctW,ctL)=Jintra;
-                        AsimnextW(ctW,ctL)=Jintra;
-                    end
-                elseif mod(ctW,4)==2                  
-                    if mod(ctL,2)==1
-                        AsimnextW(ctW,ctL)=Jintra;
-                    else
-                        AsimnextWleft(ctW,ctL)=Jintra;
-                    end
-                elseif mod(ctW,4)==3
-                    if mod(ctL,2)==0
-                        AsimnextWright(ctW,ctL)=Jintra;
-                        AsimnextW(ctW,ctL)=Jintra;
-                    end  
-                elseif mod(ctW,4)==0
-                    if mod(ctL,2)==1
-                        AsimnextWleft(ctW,ctL)=Jintra;
-                    else
-                        AsimnextW(ctW,ctL)=Jintra;
-                    end
-                end
-            end
-
-        elseif atomtype_(ctW,ctL)==0%local atom is TM
-
+        elseif atomtype_(ctW,ctL)==3
+            muigpu(ctW,ctL)=1;
+            scalgpu(ctW,ctL)=1;%scale parameter
+            BDSOT(ctW,ctL)=1;
+            BDSTT(ctW,ctL)=1;
         end
     end
 end
+
 gamatom=scalgpu*(1+alp^2);
 clear ctW ctL
 BFSOT=chi*BDSOT;
@@ -239,7 +179,6 @@ while ~(ct3>ct3run)
             mmxpreviousL(:,1)=0;mmypreviousL(:,1)=0;mmzpreviousL(:,1)=0;
             mmxnextW(1,:)=0;mmynextW(1,:)=0;mmznextW(1,:)=0;
             mmxpreviousW(end,:)=0;mmypreviousW(end,:)=0;mmzpreviousW(end,:)=0;
-            AsimnextW(:,end)=0;AsimpreviousWleft(:,1)=0;AsimpreviousW(:,end)=0;AsimnextWleft(:,1)=0;
         else%periodic condition
             %do nothing
         end
@@ -253,6 +192,7 @@ while ~(ct3>ct3run)
         hex_z=-(AsimnextL.*mmznextL+AsimpreviousL.*mmzpreviousL+...
             AsimnextW.*mmznextW+AsimpreviousW.*mmzpreviousW+...
             AsimpreviousWleft.*mmzpreviousWleft+AsimpreviousWright.*mmzpreviousWright+AsimnextWleft.*mmznextWleft+AsimnextWright.*mmznextWright)./muigpu;
+        %aaa = AsimnextL+AsimnextW+AsimnextWleft+AsimnextWright+AsimpreviousL+AsimpreviousW+AsimpreviousWleft+AsimpreviousWright;
 
         % hk_atom=Ksim./muigpu.*dot([coeffs_1,coeffs_2,coeffs_3],[mmxtmp,mmytmp,mmztmp]).*[coeffs_1,coeffs_2,coeffs_3];%hk_Fe in macrospin_model %anisotropy
         hani_x=Ksim./muigpu.*(coeffs_1.*mmxtmp+coeffs_2.*mmytmp+coeffs_3.*mmztmp).*coeffs_1;%hk_Fe in macrospin_model %anisotropy
@@ -283,7 +223,7 @@ while ~(ct3>ct3run)
         hhx=hex_x+hani_x+hdmi_x+hdipolex_+Hext(1)+Hthermalx;
         hhy=hex_y+hani_y+hdmi_y+hdipoley_+Hext(2)+Hthermaly;
         hhz=hex_z+hani_z+hdmi_z+hdipolez_+Hext(3)+Hthermalz;
-         if rk4==2%4th predictor-corrector
+        if rk4==2%4th predictor-corrector
             if ct3==1 && ~(ct1>3)
                 [sxx,syy,szz]=arrayfun(@atomgpurk4,mmxtmp,mmytmp,mmztmp,scalgpu,alp,...
                     tstep,hhx,hhy,hhz);
@@ -296,12 +236,22 @@ while ~(ct3>ct3run)
             [sxx,syy,szz]=arrayfun(@atomgpurk4,mmxtmp,mmytmp,mmztmp,psjSHEx,...
                 psjSHEy,psjSHEz,psjSTTx,psjSTTy,psjSTTz,scalgpu,alp,...
                 tstep,hhx,hhy,hhz,BDSOT,BFSOT,BDSTT,BFSTT);
+            for ctL=1:natomL
+                for ctW=1:natomW
+                    if atomtype_(ctW,ctL)==3
+                        sxx(ctW,ctL) = 0;
+                        syy(ctW,ctL) = 0;
+                        szz(ctW,ctL) = 0;
+                    end
+                end
+            end
         else%heun
             [sxx,syy,szz]=arrayfun(@atomgpu,mmxtmp,mmytmp,mmztmp,scalgpu,alp,...
                 tstep,hhx,hhy,hhz);%
         end
 
         mmx(:,:,ct1+1)=sxx; mmy(:,:,ct1+1)=syy; mmz(:,:,ct1+1)=szz;
+
         if enablefixedge
             mmx(:,1:fixededgeL,ct1+1)=mxleft;
             mmy(:,1:fixededgeL,ct1+1)=myleft;
