@@ -31,8 +31,44 @@ for ctL=1:natomL
     end
 end
 clear tmp ctW ctL ctz
-%
+%% hex
+% side*2
+% hex_constant = ones(natomW, natomL);
+% hex_constant(:, [1,end]) = 2;
+% for ctL=1:natomL
+%     for ctW=1:natomW
+% if mod(ctW,4)==1
+% hex_constant (ctW,ctL)=1;
+% end
+%     end
+% end
+% hex_constant([1,end], :) = 2;
 
+% mid/2
+hex_constant = ones(natomW, natomL)* 0.5;
+hex_constant(:, [1,end]) = 1;
+for ctL=1:natomL
+    for ctW=1:natomW
+if mod(ctW,4)==1
+hex_constant (ctW,ctL)=0.5;
+end
+    end
+end
+hex_constant([1,end], :) = 1;
+%% hdmi
+hdmi_constant1=zeros(natomW,natomL);
+hdmi_constant2=zeros(natomW,natomL);
+hdmi_constant3=zeros(natomW,natomL);
+hdmi_constant = hex_constant;
+
+hdmi_constant1(1:4:natomW,1:2:natomL) = 1;
+hdmi_constant1(3:4:natomW,2:2:natomL) = 1;
+hdmi_constant1(1:4:natomW,end) = 0;
+hdmi_constant2(2:4:natomW,2:2:natomL) = 1;
+hdmi_constant2(4:4:natomW,1:2:natomL) = 1;
+hdmi_constant3(2:4:natomW,1:2:natomL) = 1;
+hdmi_constant3(4:4:natomW,2:2:natomL) = 1;
+%% hani
 hani_x = zeros(natomW, natomL);
 hani_y = zeros(natomW, natomL);
 hani_z = zeros(natomW, natomL);

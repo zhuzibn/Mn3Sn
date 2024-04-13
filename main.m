@@ -2,13 +2,13 @@
 % require nvidia GPU
 clear all;clc;close all;tic
 %% optional control
-%gpuDevice(1)%select GPU device
+gpuDevice(1)%select GPU device
 %% control parameter
 constantfile;
 clear gam
 rk4=1;%1:rk4,0:heun Method,2:4th predictor-corrector
 bc=1;%0.periodic condition;1,not periodic
-DMIenable=0;
+DMIenable=1;
 dwcalc=0;%1:simulate dw motion 0: no domain wall
 thermalenable=0;%enable thermal field?
 %% load magnetization
@@ -50,7 +50,7 @@ if enablefixedge
     mzright=-1;  
 end
 %% system generation
-natomW=9;natomL=9;%行数为奇，列数为奇 
+natomW=5;natomL=5;%行数为奇，列数为奇 
 %note this is different to the x,y,z in h_ex or hdmi etc
 % compositionn=0.1;%composition percentage (X) of RE element, e.g. GdX(FeCo)1-X
 d=0.4e-9;%[m],lattice constant
@@ -118,9 +118,9 @@ BDSTTTM=STT_DLT*hbar/2*etaSTT*jcSTT/(msTM*tz);
 T=100;%[K]
 %% time control
 gpusave=1e-12;%how often saving gpu data
-gpurun_number=150;
+gpurun_number=10;
 tstep=5e-16;
-savetstep=100;%this is used to reduce data size
+savetstep=200;%this is used to reduce data size
 
 gpusteps=round(gpusave/tstep);
 runtime=gpurun_number*gpusave;%second run for dw motion
