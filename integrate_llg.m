@@ -2,19 +2,19 @@ mmx_=zeros(natomW,natomL,gpurun_number*final_m_savestep);
 mmy_=zeros(natomW,natomL,gpurun_number*final_m_savestep);
 mmz_=zeros(natomW,natomL,gpurun_number*final_m_savestep);
 
-BDSOT=zeros(natomW,natomL,'gpuArray');
-BDSTT=zeros(natomW,natomL,'gpuArray');
-muigpu=zeros(natomW,natomL,'gpuArray');
-scalgpu=zeros(natomW,natomL,'gpuArray');
-AsimnextL=zeros(natomW,natomL,'gpuArray');
-AsimnextW=zeros(natomW,natomL,'gpuArray');
-AsimpreviousL=zeros(natomW,natomL,'gpuArray');
-AsimpreviousW=zeros(natomW,natomL,'gpuArray');
+BDSOT=zeros(natomW,natomL);
+BDSTT=zeros(natomW,natomL);
+muigpu=zeros(natomW,natomL);
+scalgpu=zeros(natomW,natomL);
+AsimnextL=zeros(natomW,natomL);
+AsimnextW=zeros(natomW,natomL);
+AsimpreviousL=zeros(natomW,natomL);
+AsimpreviousW=zeros(natomW,natomL);
 
-AsimpreviousWleft=zeros(natomW,natomL,'gpuArray');
-AsimpreviousWright=zeros(natomW,natomL,'gpuArray');
-AsimnextWleft=zeros(natomW,natomL,'gpuArray');
-AsimnextWright=zeros(natomW,natomL,'gpuArray');
+AsimpreviousWleft=zeros(natomW,natomL);
+AsimpreviousWright=zeros(natomW,natomL);
+AsimnextWleft=zeros(natomW,natomL);
+AsimnextWright=zeros(natomW,natomL);
 
 AsimnextL(2:2:natomW,:)=Jintra;
 AsimnextL(:,end)=0;
@@ -129,9 +129,9 @@ ct3run=round((runtime)/gpusave);
 ct3=1;
 while ~(ct3>ct3run)
 
-    mmx=zeros(natomW,natomL,gpusteps,'gpuArray');
-    mmy=zeros(natomW,natomL,gpusteps,'gpuArray');
-    mmz=zeros(natomW,natomL,gpusteps,'gpuArray');
+    mmx=zeros(natomW,natomL,gpusteps);
+    mmy=zeros(natomW,natomL,gpusteps);
+    mmz=zeros(natomW,natomL,gpusteps);
 
     if ~(ct3==1)
         mmx(:,:,1)=tmp2xn0;mmy(:,:,1)=tmp2yn0;mmz(:,:,1)=tmp2zn0;
@@ -179,17 +179,22 @@ while ~(ct3>ct3run)
             mmxpreviousL(:,1)=0;mmypreviousL(:,1)=0;mmzpreviousL(:,1)=0;
             mmxnextW(1,:)=0;mmynextW(1,:)=0;mmznextW(1,:)=0;
             mmxpreviousW(end,:)=0;mmypreviousW(end,:)=0;mmzpreviousW(end,:)=0;
+            
+            mmxnextWleft(1,:)=0;mmxnextWleft(:,1)=0;mmynextWleft(1,:)=0;mmynextWleft(:,1)=0;mmznextWleft(1,:)=0;mmznextWleft(:,1)=0;
+            mmxnextWright(1,:)=0;mmxnextWright(:,end)=0;mmynextWright(1,:)=0;mmynextWright(:,end)=0;mmznextWright(1,:)=0;mmznextWright(:,end)=0;
+            mmxpreviousWleft(end,:)=0;mmxpreviousWleft(:,1)=0;mmypreviousWleft(end,:)=0;mmypreviousWleft(:,1)=0;mmzpreviousWleft(end,:)=0;mmzpreviousWleft(:,1)=0;
+            mmxpreviousWright(end,:)=0;mmxpreviousWright(:,end)=0;mmypreviousWright(end,:)=0;mmypreviousWright(:,end)=0;mmzpreviousWright(end,:)=0;mmzpreviousWright(:,end)=0;
         else%periodic condition
             %do nothing
         end
 
-        hex_x=-(AsimnextL.*mmxnextL+AsimpreviousL.*mmxpreviousL+...
+        hex_x=-hex_constant.*(AsimnextL.*mmxnextL+AsimpreviousL.*mmxpreviousL+...
             AsimnextW.*mmxnextW+AsimpreviousW.*mmxpreviousW+...
             AsimpreviousWleft.*mmxpreviousWleft+AsimpreviousWright.*mmxpreviousWright+AsimnextWleft.*mmxnextWleft+AsimnextWright.*mmxnextWright)./muigpu;%[T]
-        hex_y=-(AsimnextL.*mmynextL+AsimpreviousL.*mmypreviousL+...
+        hex_y=-hex_constant.*(AsimnextL.*mmynextL+AsimpreviousL.*mmypreviousL+...
             AsimnextW.*mmynextW+AsimpreviousW.*mmypreviousW+...
             AsimpreviousWleft.*mmypreviousWleft+AsimpreviousWright.*mmypreviousWright+AsimnextWleft.*mmynextWleft+AsimnextWright.*mmynextWright)./muigpu;
-        hex_z=-(AsimnextL.*mmznextL+AsimpreviousL.*mmzpreviousL+...
+        hex_z=-hex_constant.*(AsimnextL.*mmznextL+AsimpreviousL.*mmzpreviousL+...
             AsimnextW.*mmznextW+AsimpreviousW.*mmzpreviousW+...
             AsimpreviousWleft.*mmzpreviousWleft+AsimpreviousWright.*mmzpreviousWright+AsimnextWleft.*mmznextWleft+AsimnextWright.*mmznextWright)./muigpu;
         %aaa = AsimnextL+AsimnextW+AsimnextWleft+AsimnextWright+AsimpreviousL+AsimpreviousW+AsimpreviousWleft+AsimpreviousWright;
@@ -204,9 +209,10 @@ while ~(ct3>ct3run)
         % 2023.09, During the plot of skyrmion, Zhang Xue find the top-down
         % direction is wrong. It is induced by the wrong nextW direction,
         % which has been corrected.
-        hdmi_x=Dsim./muigpu.*(-mmznextL+mmzpreviousL);%[T]
-        hdmi_y=Dsim./muigpu.*(-mmznextW+mmzpreviousW);
-        hdmi_z=Dsim./muigpu.*(mmxnextL-mmxpreviousL+mmynextW-mmypreviousW);
+        hdmi_x=0;%[T]
+        hdmi_y = hdmi_constant.*(Dsim./muigpu.*((mmznextW-mmznextWright+mmzpreviousWright-mmzpreviousW).*hdmi_constant1+(mmzpreviousL-mmznextWleft+mmznextL-mmzpreviousW).*hdmi_constant2+(mmznextW-mmznextL+mmzpreviousWleft-mmzpreviousL).*hdmi_constant3));
+        hdmi_z = hdmi_constant.*(Dsim./muigpu.*((-mmynextW+mmynextWright-mmypreviousWright+mmypreviousW).*hdmi_constant1+(-mmypreviousL+mmynextWleft-mmynextL+mmypreviousW).*hdmi_constant2+(-mmynextW+mmynextL-mmypreviousWleft+mmypreviousL).*hdmi_constant3));
+
         if thermalenable
             %equation (15) in Atomistic spin model simulations of magnetic nanomaterials
             %calculate once for one time step
@@ -215,14 +221,17 @@ while ~(ct3>ct3run)
             Hthermaly=normrnd(0,Hthermal1);
             Hthermalz=normrnd(0,Hthermal1);
         else
-            Hthermalx=zeros(natomW,natomL,'gpuArray');
-            Hthermaly=zeros(natomW,natomL,'gpuArray');
-            Hthermalz=zeros(natomW,natomL,'gpuArray');
+            Hthermalx=zeros(natomW,natomL);
+            Hthermaly=zeros(natomW,natomL);
+            Hthermalz=zeros(natomW,natomL);
         end
         dipole_calc();
         hhx=hex_x+hani_x+hdmi_x+hdipolex_+Hext(1)+Hthermalx;
         hhy=hex_y+hani_y+hdmi_y+hdipoley_+Hext(2)+Hthermaly;
         hhz=hex_z+hani_z+hdmi_z+hdipolez_+Hext(3)+Hthermalz;
+
+        mmxtmp=gpuArray(mmxtmp);mmytmp=gpuArray(mmytmp);mmztmp=gpuArray(mmztmp);
+
         if rk4==2%4th predictor-corrector
             if ct3==1 && ~(ct1>3)
                 [sxx,syy,szz]=arrayfun(@atomgpurk4,mmxtmp,mmytmp,mmztmp,scalgpu,alp,...
