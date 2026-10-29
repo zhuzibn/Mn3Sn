@@ -1,0 +1,6 @@
+.sisyphus/
+.venv/
+.ruff_cache/
+**/__pycache__/
+/discussion_zhengde.md
+/docs/fig5-verification/
