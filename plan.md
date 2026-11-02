@@ -1,5 +1,7 @@
 # Mn3Sn audit and improvement plan
 
+The completed three-spin comparison is recorded in [the diagnostic plan below](#three-spin-comparison--2026-11-02) and the [results report](docs/three-spin-comparison.md). It leaves the production implementation unchanged.
+
 Audit date: 2026-10-14. Base revision: `2307530`, branch `main`; working tree was clean before documentation work. Status: audit and documentation complete; implementation stages below are proposed and have not been approved or executed. No MATLAB source or physical defaults were changed.
 
 ## Goal and Success Criteria
@@ -448,3 +450,99 @@ Validation on 2026-10-27:
 - `/home/zhuzibn/.venvs/webpage-capture/bin/python /tmp/check_mn3sn_unequal_pairs.py`: passed with Chromium 151.0.7922.34. Verified all 12 table selections, map/keyboard selection, focus retention, directional labels/weights against the independent impulse data, four presets with both boundaries, term switching, empty receivers, the cell page, and 1440/390 px layouts. No browser errors, network requests, or document-wide horizontal overflow. Chromium required sandbox escalation for the full browser check; the initial sandboxed launch failed before opening the page.
 - Inspected desktop and mobile screenshots. Preview files `/tmp/mn3sn-unequal-exchange-overview.png`, `/tmp/mn3sn-unequal-exchange-mobile.png`, and the standalone map `/tmp/mn3sn-unequal-exchange-pairs.svg` are temporary inspection artifacts; the maintained deliverable is the HTML viewer and its local companions.
 - No new MATLAB/GPU simulation, physical-model validation, source coefficient change, dependency installation, or network access. The source snapshot and its MATLAB provenance are unchanged. The prior equation-note convention in `sections/hamiltonian.tex` informed the distinction between directed field coefficients and reciprocal pair energies; this task adds no crystallographic or publication-agreement claim.
+
+## Three-spin comparison — 2026-11-02
+
+### Goal and Success Criteria
+
+The user authorized the proposed comparison of this spatial code reduced to three occupied sites against `Mn3Sn_3atoms`, followed by matched Figure 5 trajectories and timestep refinement. Preserve production source and historical results. Success means measured term-level correspondence, explicit accounting for parameter and integration differences, and a reproducible report distinguishing the current algorithm from a diagnostic coupled RK4 variant. This extends the audit; it does not approve production repairs or larger-lattice changes.
+
+### Model Classification and Equation Family
+
+Class 5 for the diagnostic: three noncollinear, fixed-length Mn sublattice vectors with LLGS [1, Sec. II]. The spatial code supplies a three-site software realization; its larger-lattice Class 4 crystallographic limitations remain unresolved. Electronic structure and transport are outside scope.
+
+### Existing Behavior and Reference Implementations
+
+Inspect the current `distrib.m`, `systemgeneration.m`, `integrate_llg.m`, `atomgpurk4.m`, `main.m`, and constants. Compare with `Mn3Sn_3atoms/main.m`, `field_eta.m`, `LLG_solver.m`, corrected `rk4_4llg.m`, and its existing verification tools/report. Source inspection identifies half the reference anisotropy field, approximately 450 times its SOT amplitude at equal current, slightly different exchange and gamma, and fields frozen across RK stages. These differences must be measured separately. The ASTRO README/instructions were consulted only for model boundaries; no ferrimagnetic geometry or parameters are imported.
+
+### State Variables, Geometry, and Boundaries
+
+Use `natomW=natomL=2`, `bc=1`, with distribution I/O, domain walls, dipoles, pinning, and noise disabled. Source inspection gives three occupied entries and one empty entry. Map reference spins `(a,b,c)` to array entries `((2,2),(1,1),(2,1))` by their easy-axis angles `(30,270,150)` degrees. Verify this mapping and all directed interaction coefficients by executing the original setup and Cartesian impulses. The empty `(1,2)` entry must stay exactly zero.
+
+| Detail | Evidence and implementation boundary |
+|---|---|
+| Three Mn sublattice moments; yz spin plane and +x polarization | [1, Sec. II and Fig. 1], checked against the reference implementation |
+| 2×2 storage and index permutation | Software bookkeeping from current source, not a physical lattice-constant claim |
+| Three reciprocal exchange pairs and cyclic DMI | Expected algebraic reduction of the source; must pass measured operator checks |
+| Physical coordinates, stacking, finite-sample surface interpretation | Not required for the three-vector comparison; existing spatial mapping remains REFERENCE MISSING and is not implemented |
+
+### Hamiltonian
+
+For the reference triangle, use the implemented single-counted pair convention:
+
+$$
+E=J\sum_{(i,j)=(a,b),(b,c),(c,a)}\mathbf m_i\cdot\mathbf m_j
++D\hat x\cdot\sum_{(i,j)=(a,b),(b,c),(c,a)}\mathbf m_i\times\mathbf m_j
+-K\sum_i(\mathbf e_i\cdot\mathbf m_i)^2-\mu\sum_i\mathbf B_{\rm ext}\cdot\mathbf m_i.
+$$
+
+The terms are those of [1, Sec. II]; the exact pair-counting convention is established by the reference code, not independently resolved by the paper's general pair sums. The native spatial anisotropy corresponds instead to coefficient `Ksim/2` in this energy. SOT is nonconservative.
+
+### Parameters and Evidence
+
+Reference values: `mu=3*mub`, exchange field `100.812 T`, `K=0.196 meV`, `D=0.833 meV`, `alpha=0.003`, `thetaSH=0.06`, `Ms=441850 A/m`, thickness `30 nm`, and `gamma=1.760859644e11 rad/(s T)`. Material scales and the 5 fs timestep are from [1, Sec. II]; preserve exact reference-code constants for equality checks and record their rounding relative to the paper's `J=17.53 meV` and `Ms=6*mu/Vcell`. Read native values independently from source. No thermal noise, STT, FLT, dipoles, or interlayer coupling is introduced.
+
+### Effective Fields and Units Check
+
+Use `B_i=-(1/mu)*dE/dm_i` in tesla. For cyclic `(i,j,k)`, exchange is `-(J/mu)*(m_j+m_k)`, DMI is `(D/mu)*cross(xhat,m_j-m_k)`, and anisotropy is `(2*K/mu)*dot(e_i,m_i)*e_i`. Check each term against source impulses and finite-difference energy derivatives. Compare native and explicitly matched coefficients separately. Oe-to-tesla conversion is `1e-4`; the stored `hbar` is numerically hbar/e in SI torque formulas, so do not divide by charge again.
+
+### Dynamical Equation and Nonconservative Torques
+
+With `p=(1,0,0)` and signed `b=(hbar/e)*thetaSH*Jc/(2*Ms*thickness)`, compare
+
+$$
+\dot{\mathbf m}=\frac{\gamma}{1+\alpha^2}\left[-\mathbf m\times\mathbf B-\alpha\mathbf m\times(\mathbf m\times\mathbf B)-b\mathbf m\times(\mathbf m\times\mathbf p)+\alpha b\mathbf m\times\mathbf p\right].
+$$
+
+This is the explicit form of [1, Sec. II], retaining Gilbert cross terms as in `presentations/equations/sections/llg_equation.tex`, `eq:ll-with-flt` and `eq:llg-gilbert`. Verify the RHS against both original implementations and the implicit Gilbert residual.
+
+### Initial Conditions, Solver, and Outputs
+
+Use reference first-spin seeds `30,90,150,210,270,330` degrees, with successive spins offset by 120 degrees. Figure 5(a) uses seed 210 degrees, current `+5e10 A/m²`, and fields `175,200,225,250,275,300,325,350,375,400,450,500 Oe`. Figure 5(b,c) uses all six seeds, `1000 Oe`, and both current signs [1, Fig. 5]. Apply field/current from 1 to 4 ns in a 5 ns run. Use common physical sample times, explicit update counts, and signed `atan2d(mean_y,mean_z)`; the perfect initial 120-degree state's zero mean has no defined angle.
+
+Compare native parameters/frozen fields, matched parameters/frozen fields, and matched parameters/coupled RK4 with the corrected reference. The coupled variant is diagnostic only. Start at 5, 2.5, and 1.25 fs; include native 0.5 fs or further refinement if needed to characterize failure. Record preprojection norm error as well as normalized norms. Store outputs in a fresh directory under `.sisyphus/`; never run either production `main.m` or overwrite result files. A compiled replay may accelerate sweeps only after short MATLAB comparisons pass.
+
+### Implementation Mapping
+
+| Stage | Implementation | Verification gate |
+|---|---|---|
+| Mapping and topology | Isolated setup excerpts and impulse measurements | Exactly three occupied sites, correct axes/permutation, three reciprocal pairs, antisymmetric directed DMI |
+| Static fields | Native and matched coefficients; explicit triangle energy | Matched term fields agree within 1e-11 T; scaled finite-difference gradient residual below 1e-7 |
+| RHS and one-step updates | Original kernels, explicit RHS, optional replay | Relative RHS/Gilbert residual below 1e-12; replay spin discrepancy below 1e-10 over short deterministic checks |
+| Integrators | Compare frozen and recomputed stage fields | Record coupled timestep convergence and preprojection errors; do not require the legacy method to pass fourth order |
+| Figure cases and report | All listed fields/seeds/signs; plots and source hashes | Report endpoints, transient errors and convergence without tuning parameters to force agreement |
+
+Do not begin a dependent stage until the preceding implementation gate passes. A verified defect in native behavior is a diagnostic result, not permission to repair production. Fields, torque/RHS, integration, and sweep orchestration stay separate. New crystallographic illustrations are not applicable: no new lattice is constructed and the existing viewers remain unchanged. A read-only independent verification may audit the checks, following the spin-dynamics skill.
+
+### Verification and Acceptance Criteria
+
+Require finite occupied spins, postprojection norm error below 1e-12, exact-zero empty entries, aligned physical times, and protected source/result hashes. For matched coupled dynamics, target mean-spin differences below 1e-5 under timestep halving and final-angle agreement within 0.1 degree. Compare with the reference's recorded 30-degree destinations at 175–275 Oe, 90 degrees at 300–500 Oe, and 90 degrees at 1000 Oe for both current signs. Report the sampled transition bracket rather than claim a precise critical field. A failing native/frozen trajectory remains visible; qualitative endpoint agreement alone does not validate its integration.
+
+### References
+
+[1] Zhengde Xu, Xue Zhang, Yixiao Qiao, Gengchiau Liang, Shuyuan Shi, Zhifeng Zhu, Deterministic spin-orbit torque switching including the interplay between spin polarization and kagome plane in Mn3Sn, Physical Review B **109**, 134433 (2024). DOI: https://doi.org/10.1103/PhysRevB.109.134433. Evidence already inspected before the environment change: reviewed paper record `AFM/2024-Deterministic spin-orbit torque switching including the interplay between spin-PRB-zhengde Xu`, source PDF model page 134433-2 and Fig. 5 page 134433-5, plus text extraction of pp. 2–5. The presentation record `notes/ee237/week15a-afm/slides.md` was checked for context; the paper supplies quantitative inputs. No further access to the denied papers directory is required.
+
+### Assumptions, Missing References, Risks, and Approval Questions
+
+- The user's “proceed your suggestion” and “continue” authorize the isolated diagnostic comparison described above. Production changes and larger-lattice repairs remain outside scope.
+- Existing historical sections are retained. No exact digitized published curves are available; distinguish numerical agreement with the reference implementation from qualitative agreement with the published plot.
+- Physical crystallographic mappings remain REFERENCE MISSING, as recorded in the original audit. They do not block the algebraic three-vector comparison and must not be inferred from it.
+- Execution completed on 2026-11-02 at the user's request. Fresh source snapshots and outputs are under `.sisyphus/three-spin-20261102-02/`, with maintained diagnostic harnesses under `verification/`. Production source and existing results remain protected. Results and rerun commands are in [the comparison report](docs/three-spin-comparison.md).
+
+### Completed comparison
+
+- **Mapping/static gates passed.** The 2×2 source setup gives exactly the proposed three-spin mapping, three reciprocal exchange pairs, and cyclic antisymmetric DMI coefficients. Matched fields differ from `field_eta.m` by at most $2.84\times10^{-14}$ T; scaled energy-gradient residuals are below $2.23\times10^{-11}$. Native/reference anisotropy differs by two, SOT by 449.997115592, and exchange/gamma by the small source rounding differences tabulated in the report.
+- **RHS/replay gates passed.** Explicit/source RHS and implicit Gilbert residuals are below $3.6\times10^{-16}$. Twelve startup and eight driven 5 ps MATLAB comparisons have maximum spin discrepancy $1.75\times10^{-13}$. A scalar GPU dispatch/reset check agrees with the CPU and preserves empty output slots. This is not full production GPU integration.
+- **Coupled convergence and Figure 5 gates passed.** 336 full 5 ns runs cover all 24 physical cases and four variants; six additional frozen-field refinements bring the full-length total to 342. At 5/2.5/1.25 fs, both coupled variants give 30° for 175–275 Oe, 90° for 300–500 Oe, and 90° for all six seeds/current signs at 1000 Oe. Maximum coupled mean-component differences under halving are $2.14\times10^{-9}$ and $1.34\times10^{-10}$, approximately sixteenfold reduction. The sampled transition bracket is 275 < H ≤ 300 Oe.
+- **Frozen-field accuracy failed, as a retained diagnostic result.** Matched frozen fields at 0.5 fs give 89.9338° at 275 Oe rather than 30°. Even at 0.0625 fs, the 300 Oe matched frozen transient differs from the reference by 0.00108219 in a mean component. Native/frozen trajectories are also unconverged in the tested range and combine coefficient and integration differences. Near-machine-precision norms do not establish trajectory accuracy.
+- **Scope and artifacts.** All outputs use update-derived physical times, exact 5 ns endpoints, and 0.25 ps sampling. Full-length calculations use the validated compiled replay; both production entry scripts remain unexecuted. MATLAB R2024b Update 1, GCC 11.4.0, Python 3.10.12 standard library, and the RTX 3060 Laptop GPU scalar probe are recorded in the report. No dependency installation, network access, new physical lattice, production repair, or publication-curve digitization occurred. The source-hash preservation check and independently reviewed plots complete the diagnostic; larger-lattice reference gaps remain open.
