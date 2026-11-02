@@ -183,9 +183,9 @@
   }
   function renderTable() {
     const t=term(), reads=activeReads(), p=data.parameters;
-    $('reads-table').querySelector('thead').innerHTML=t==='anisotropy'?'<tr><th>Entry</th><th>e = (x,y,z)</th><th>K / μ (T)</th><th>Status</th></tr>':'<tr><th>Read</th><th>Source offset<br>Δrow, Δcol</th><th>Source j</th><th>Raw mask</th><th>h × mask</th><th>Energy-scale coefficient (J)</th><th>Field coefficient (T)</th><th>Reverse weight</th><th>Status</th></tr>';
+    $('reads-table').querySelector('thead').innerHTML=t==='anisotropy'?'<tr><th>Entry</th><th>e = (x,y,z)</th><th>2K / μ (T)</th><th>Status</th></tr>':'<tr><th>Read</th><th>Source offset<br>Δrow, Δcol</th><th>Source j</th><th>Raw mask</th><th>h × mask</th><th>Energy-scale coefficient (J)</th><th>Field coefficient (T)</th><th>Reverse weight</th><th>Status</th></tr>';
     if(t==='anisotropy') {
-      $('reads-table').querySelector('tbody').innerHTML='<tr><td>'+pair(selected)+'</td><td>'+vec(s.axes[selected])+'</td><td>'+sci(p.K/p.mu)+'</td><td>'+(s.occupancy[selected]===1?'onsite':'empty receiver; excluded')+'</td></tr>';
+      $('reads-table').querySelector('tbody').innerHTML='<tr><td>'+pair(selected)+'</td><td>'+vec(s.axes[selected])+'</td><td>'+sci(2*p.K/p.mu)+'</td><td>'+(s.occupancy[selected]===1?'onsite':'empty receiver; excluded')+'</td></tr>';
       $('table-note').textContent='Anisotropy is onsite: no neighbor, shift, or bond multiplicity. Empty slots have zero axes and no physical anisotropy response.';
       $('read-detail').innerHTML='<p class="small">Onsite term · select another array entry to inspect its easy axis.</p>';return;
     }
@@ -208,8 +208,8 @@
       $('formula').innerHTML='<div class="formula">B<sub>x</sub> = 0<br>B<sub>y,i</sub> = (h<sub>i</sub>D / μ<sub>i</sub>) Σ<sub>q</sub> c<sub>i,q</sub>s<sub>z,j</sub><br>B<sub>z,i</sub> = −(h<sub>i</sub>D / μ<sub>i</sub>) Σ<sub>q</sub> c<sub>i,q</sub>s<sub>y,j</sub></div><p>Blue and red distinguish positive and negative c coefficients. These are signed component reads; they do not establish physical DMI-vector directions.</p>';
       $('term-note').textContent='D = '+sci(data.parameters.D)+' J. The maximum |C + Cᵀ| of the occupied-site normalized operator is '+probe.dmiAntisymmetryError+'. This diagnostic includes receiver scaling. Physical bond orientation, energy sign and edge normalization remain unresolved.';
     }else {
-      $('formula').innerHTML='<div class="formula">B<sub>i</sub><sup>an</sup> = (K / μ<sub>i</sub>)(e<sub>i</sub> · s<sub>i</sub>) e<sub>i</sub></div><p>The axis is a unit vector at occupied entries. This current field follows algebraically from E<sub>i</sub> = −½K(e<sub>i</sub> · s<sub>i</sub>)² under B = −(1/μ)∂E/∂s.</p>';
-      $('term-note').textContent='K = '+sci(data.parameters.K)+' J. The factor relative to the published single-site anisotropy remains unresolved; this page preserves the implemented coefficient.';
+      $('formula').innerHTML='<div class="formula">B<sub>i</sub><sup>an</sup> = (2K / μ<sub>i</sub>)(e<sub>i</sub> · s<sub>i</sub>) e<sub>i</sub></div><p>The axis is a unit vector at occupied entries. This current field follows algebraically from E<sub>i</sub> = −K(e<sub>i</sub> · s<sub>i</sub>)² under B = −(1/μ)∂E/∂s.</p>';
+      $('term-note').textContent='K = '+sci(data.parameters.K)+' J. K is the onsite energy coefficient; its field uses 2K/μ, matching the three-spin reference.';
     }
   }
   function excerpt(file,start,end,highlight) {

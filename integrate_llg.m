@@ -1,6 +1,15 @@
-mmx_=zeros(natomW,natomL,gpurun_number*final_m_savestep);
-mmy_=zeros(natomW,natomL,gpurun_number*final_m_savestep);
-mmz_=zeros(natomW,natomL,gpurun_number*final_m_savestep);
+ct3run=round(runtime/gpusave);
+steps_per_chunk=gpusteps-1;
+actual_updates=ct3run*steps_per_chunk;
+assert(abs(actual_updates*tstep-runtime)<1e-10*runtime, ...
+    'Mn3Sn:TimeGrid','runtime must equal the number of block updates times tstep.');
+saved_steps=unique([0:savetstep:actual_updates actual_updates]);
+mmx_=zeros(natomW,natomL,numel(saved_steps));
+mmy_=zeros(natomW,natomL,numel(saved_steps));
+mmz_=zeros(natomW,natomL,numel(saved_steps));
+if ~exist('pulse_start','var'),pulse_start=0;pulse_end=Inf;end
+pulse_on_step=round(pulse_start/tstep);pulse_off_step=round(pulse_end/tstep);
+pulse_active_updates=0;
 
 BDSOT=zeros(natomW,natomL);
 BDSTT=zeros(natomW,natomL);
@@ -125,7 +134,6 @@ if dipolemode==3 %group atoms into macrocells
     clear ctL2 ctW2
 end
 
-ct3run=round((runtime)/gpusave);
 ct3=1;
 while ~(ct3>ct3run)
 
@@ -142,9 +150,35 @@ while ~(ct3>ct3run)
     ct1=1; %count 1
     while ct1<gpusteps
 
+        completed_steps=(ct3-1)*steps_per_chunk+ct1-1;
+        drive_active=completed_steps>=pulse_on_step && completed_steps<pulse_off_step;
+        pulse_active_updates=pulse_active_updates+drive_active;
+        Hext_step=Hext*drive_active;
+        BDSOT_step=BDSOT*drive_active;BFSOT_step=BFSOT*drive_active;
+        BDSTT_step=BDSTT*drive_active;BFSTT_step=BFSTT*drive_active;
+
         mmxtmp=mmx(:,:,ct1);
         mmytmp=mmy(:,:,ct1);
         mmztmp=mmz(:,:,ct1);
+
+        % The complete lattice must reach each RK stage before its fields
+        % are evaluated. Intermediate states are deliberately not normalized.
+        nstage=1;
+        if rk4==1
+            nstage=4;
+            rkbase_x=mmxtmp; rkbase_y=mmytmp; rkbase_z=mmztmp;
+            rkx=zeros(natomW,natomL,4);
+            rky=zeros(natomW,natomL,4);
+            rkz=zeros(natomW,natomL,4);
+        end
+        for rkstage=1:nstage
+        if rk4==1 && rkstage>1
+            stageweight=0.5;
+            if rkstage==4, stageweight=1; end
+            mmxtmp=rkbase_x+stageweight*rkx(:,:,rkstage-1);
+            mmytmp=rkbase_y+stageweight*rky(:,:,rkstage-1);
+            mmztmp=rkbase_z+stageweight*rkz(:,:,rkstage-1);
+        end
 
         mmxnextL=circshift(mmxtmp,[0,-1]);%length direction
         mmynextL=circshift(mmytmp,[0,-1]);
@@ -200,9 +234,9 @@ while ~(ct3>ct3run)
         %aaa = AsimnextL+AsimnextW+AsimnextWleft+AsimnextWright+AsimpreviousL+AsimpreviousW+AsimpreviousWleft+AsimpreviousWright;
 
         % hk_atom=Ksim./muigpu.*dot([coeffs_1,coeffs_2,coeffs_3],[mmxtmp,mmytmp,mmztmp]).*[coeffs_1,coeffs_2,coeffs_3];%hk_Fe in macrospin_model %anisotropy
-        hani_x=Ksim./muigpu.*(coeffs_1.*mmxtmp+coeffs_2.*mmytmp+coeffs_3.*mmztmp).*coeffs_1;%hk_Fe in macrospin_model %anisotropy
-        hani_y=Ksim./muigpu.*(coeffs_1.*mmxtmp+coeffs_2.*mmytmp+coeffs_3.*mmztmp).*coeffs_2;%hk_Fe in macrospin_model %anisotropy
-        hani_z=Ksim./muigpu.*(coeffs_1.*mmxtmp+coeffs_2.*mmytmp+coeffs_3.*mmztmp).*coeffs_3;%hk_Fe in macrospin_model %anisotropy
+        hani_x=2*Ksim./muigpu.*(coeffs_1.*mmxtmp+coeffs_2.*mmytmp+coeffs_3.*mmztmp).*coeffs_1;%Eani=-Ksim*(e dot m)^2
+        hani_y=2*Ksim./muigpu.*(coeffs_1.*mmxtmp+coeffs_2.*mmytmp+coeffs_3.*mmztmp).*coeffs_2;
+        hani_z=2*Ksim./muigpu.*(coeffs_1.*mmxtmp+coeffs_2.*mmytmp+coeffs_3.*mmztmp).*coeffs_3;
 
         % Renjie pointed out the error in calculating hdmi in the previous
         % version of code, which has been corrected below.
@@ -214,21 +248,23 @@ while ~(ct3>ct3run)
         hdmi_z = hdmi_constant.*(Dsim./muigpu.*((-mmynextW+mmynextWright-mmypreviousWright+mmypreviousW).*hdmi_constant1+(-mmypreviousL+mmynextWleft-mmynextL+mmypreviousW).*hdmi_constant2+(-mmynextW+mmynextL-mmypreviousWleft+mmypreviousL).*hdmi_constant3));
 
         if thermalenable
+            if rkstage==1
             %equation (15) in Atomistic spin model simulations of magnetic nanomaterials
             %calculate once for one time step
             Hthermal1=sqrt(2*kb*T*alp./(muigpu.*gamatom.*tstep));%[T]
             Hthermalx=normrnd(0,Hthermal1);
             Hthermaly=normrnd(0,Hthermal1);
             Hthermalz=normrnd(0,Hthermal1);
+            end
         else
             Hthermalx=zeros(natomW,natomL);
             Hthermaly=zeros(natomW,natomL);
             Hthermalz=zeros(natomW,natomL);
         end
         dipole_calc();
-        hhx=hex_x+hani_x+hdmi_x+hdipolex_+Hext(1)+Hthermalx;
-        hhy=hex_y+hani_y+hdmi_y+hdipoley_+Hext(2)+Hthermaly;
-        hhz=hex_z+hani_z+hdmi_z+hdipolez_+Hext(3)+Hthermalz;
+        hhx=hex_x+hani_x+hdmi_x+hdipolex_+Hext_step(1)+Hthermalx;
+        hhy=hex_y+hani_y+hdmi_y+hdipoley_+Hext_step(2)+Hthermaly;
+        hhz=hex_z+hani_z+hdmi_z+hdipolez_+Hext_step(3)+Hthermalz;
 
         mmxtmp=gpuArray(mmxtmp);mmytmp=gpuArray(mmytmp);mmztmp=gpuArray(mmztmp);
 
@@ -242,22 +278,27 @@ while ~(ct3>ct3run)
                     scalgpu,alp,tstep,hhx,hhy,hhz);
             end
         elseif rk4==1 %rk4
-            [sxx,syy,szz]=arrayfun(@atomgpurk4,mmxtmp,mmytmp,mmztmp,psjSHEx,...
+            [dx,dy,dz]=arrayfun(@atom_llgs_rhs,mmxtmp,mmytmp,mmztmp,psjSHEx,...
                 psjSHEy,psjSHEz,psjSTTx,psjSTTy,psjSTTz,scalgpu,alp,...
-                tstep,hhx,hhy,hhz,BDSOT,BFSOT,BDSTT,BFSTT);
-            for ctL=1:natomL
-                for ctW=1:natomW
-                    if atomtype_(ctW,ctL)==3
-                        sxx(ctW,ctL) = 0;
-                        syy(ctW,ctL) = 0;
-                        szz(ctW,ctL) = 0;
-                    end
-                end
+                hhx,hhy,hhz,BDSOT_step,BFSOT_step,BDSTT_step,BFSTT_step);
+            dx(atomtype_==3)=0; dy(atomtype_==3)=0; dz(atomtype_==3)=0;
+            rkx(:,:,rkstage)=tstep*gather(dx);
+            rky(:,:,rkstage)=tstep*gather(dy);
+            rkz(:,:,rkstage)=tstep*gather(dz);
+            if rkstage==4
+                sxx=rkbase_x+(rkx(:,:,1)+2*rkx(:,:,2)+2*rkx(:,:,3)+rkx(:,:,4))/6;
+                syy=rkbase_y+(rky(:,:,1)+2*rky(:,:,2)+2*rky(:,:,3)+rky(:,:,4))/6;
+                szz=rkbase_z+(rkz(:,:,1)+2*rkz(:,:,2)+2*rkz(:,:,3)+rkz(:,:,4))/6;
+                rknorm=sqrt(sxx.^2+syy.^2+szz.^2);
+                rknorm(atomtype_==3)=1;
+                sxx=sxx./rknorm; syy=syy./rknorm; szz=szz./rknorm;
+                sxx(atomtype_==3)=0; syy(atomtype_==3)=0; szz(atomtype_==3)=0;
             end
         else%heun
             [sxx,syy,szz]=arrayfun(@atomgpu,mmxtmp,mmytmp,mmztmp,scalgpu,alp,...
                 tstep,hhx,hhy,hhz);%
         end
+        end % RK stages; legacy solvers still perform one field evaluation
 
         mmx(:,:,ct1+1)=sxx; mmy(:,:,ct1+1)=syy; mmz(:,:,ct1+1)=szz;
 
@@ -291,9 +332,13 @@ while ~(ct3>ct3run)
     tmp2xn0=mmx(:,:,end);tmp2yn0=mmy(:,:,end);tmp2zn0=mmz(:,:,end);
     tmp2xn1=mmx(:,:,end-1);tmp2yn1=mmy(:,:,end-1);tmp2zn1=mmz(:,:,end-1);
     tmp2xn2=mmx(:,:,end-2);tmp2yn2=mmy(:,:,end-2);tmp2zn2=mmz(:,:,end-2);
-    mmx_(:,:,(ct3-1)*final_m_savestep+1:ct3*final_m_savestep)=gather(mmx(:,:,1:savetstep:end));
-    mmy_(:,:,(ct3-1)*final_m_savestep+1:ct3*final_m_savestep)=gather(mmy(:,:,1:savetstep:end));
-    mmz_(:,:,(ct3-1)*final_m_savestep+1:ct3*final_m_savestep)=gather(mmz(:,:,1:savetstep:end));
+    block_start=(ct3-1)*steps_per_chunk;
+    output_indices=find(saved_steps>block_start & saved_steps<=ct3*steps_per_chunk);
+    if ct3==1,output_indices=[1 output_indices];end
+    block_indices=saved_steps(output_indices)-block_start+1;
+    mmx_(:,:,output_indices)=gather(mmx(:,:,block_indices));
+    mmy_(:,:,output_indices)=gather(mmy(:,:,block_indices));
+    mmz_(:,:,output_indices)=gather(mmz(:,:,block_indices));
     ct3=ct3+1;
 end
 
@@ -303,4 +348,4 @@ mmx=mmx_;
 mmy=mmy_;
 mmz=mmz_;
 clear mmx_ mmy_ mmz_
-t=t(1:savetstep:end);
+t=saved_steps*tstep;

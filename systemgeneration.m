@@ -1,4 +1,5 @@
 distrib();
+if ~exist('initial_theta_deg','var'),initial_theta_deg=121;end
 mx_init=zeros(natomW,natomL);%initial magnetization
 my_init=zeros(natomW,natomL);
 mz_init=zeros(natomW,natomL);
@@ -32,7 +33,7 @@ else
     for ctL=1:natomL
         for ctW=1:natomW
             phi_=90/180*pi;% keep in y-z plane
-            thet_1=121/180*pi;
+            thet_1=initial_theta_deg/180*pi;
             if atomtype_(ctW,ctL)==1
                 if mod(ctW,2)==1 %奇数行
                     thet_=(thet_1+120/180*pi);

@@ -1,6 +1,6 @@
 # Mn3Sn audit and improvement plan
 
-The completed three-spin comparison is recorded in [the diagnostic plan below](#three-spin-comparison--2026-11-02) and the [results report](docs/three-spin-comparison.md). It leaves the production implementation unchanged.
+The historical three-spin comparison is recorded in [the diagnostic plan below](#three-spin-comparison--2026-11-02) and the [results report](docs/three-spin-comparison.md). The subsequent [frozen-field repair](docs/frozen-field-repair.md) is followed by the approved reference-parameter/protocol alignment in the final section and [its report](docs/reference-protocols.md). Earlier audit statements describe the checkout at their recorded stage.
 
 Audit date: 2026-10-14. Base revision: `2307530`, branch `main`; working tree was clean before documentation work. Status: audit and documentation complete; implementation stages below are proposed and have not been approved or executed. No MATLAB source or physical defaults were changed.
 
@@ -546,3 +546,170 @@ Require finite occupied spins, postprojection norm error below 1e-12, exact-zero
 - **Coupled convergence and Figure 5 gates passed.** 336 full 5 ns runs cover all 24 physical cases and four variants; six additional frozen-field refinements bring the full-length total to 342. At 5/2.5/1.25 fs, both coupled variants give 30° for 175–275 Oe, 90° for 300–500 Oe, and 90° for all six seeds/current signs at 1000 Oe. Maximum coupled mean-component differences under halving are $2.14\times10^{-9}$ and $1.34\times10^{-10}$, approximately sixteenfold reduction. The sampled transition bracket is 275 < H ≤ 300 Oe.
 - **Frozen-field accuracy failed, as a retained diagnostic result.** Matched frozen fields at 0.5 fs give 89.9338° at 275 Oe rather than 30°. Even at 0.0625 fs, the 300 Oe matched frozen transient differs from the reference by 0.00108219 in a mean component. Native/frozen trajectories are also unconverged in the tested range and combine coefficient and integration differences. Near-machine-precision norms do not establish trajectory accuracy.
 - **Scope and artifacts.** All outputs use update-derived physical times, exact 5 ns endpoints, and 0.25 ps sampling. Full-length calculations use the validated compiled replay; both production entry scripts remain unexecuted. MATLAB R2024b Update 1, GCC 11.4.0, Python 3.10.12 standard library, and the RTX 3060 Laptop GPU scalar probe are recorded in the report. No dependency installation, network access, new physical lattice, production repair, or publication-curve digitization occurred. The source-hash preservation check and independently reviewed plots complete the diagnostic; larger-lattice reference gaps remain open.
+
+
+## Frozen-field repair and Figures 2, 4(a), 5 — 2026-11-02
+
+### Goal and Success Criteria
+
+The user's explicit request authorizes fixing the frozen-field issue and checking Figures 2, 4 and 5 against `Mn3Sn_3atoms`, excluding the ferromagnet. Preserve historical results and reference sources. Pass requires production stage-state field evaluation, coupled fourth-order convergence, exact-zero vacancies, unchanged LLGS coefficients, and measured agreement with the reference figure cases. This supersedes the earlier audit-only restriction for this specific solver repair.
+
+### Model Classification and Equation Family
+
+Class 4 spatial fixed-length LLGS; the verification reduction is the already defined Class 5 three-vector noncollinear Mn model [1, Sec. II]. No electronic-structure calculation or new crystal construction.
+
+### Existing Behavior and Reference Implementations
+
+`integrate_llg.m` builds fields once, and `atomgpurk4.m` advances each spin with those fields frozen. The earlier comparison above establishes the failure and reference correspondence. Consulted the reference repository's settings and corrected-RK4 report, existing static/replay harnesses, and ASTRO instructions/README for scope only. Preserve the legacy scalar kernel for historical diagnostics and unsupported legacy solver paths. The active RK4 path will use a scalar derivative kernel containing its unchanged first-stage algebra.
+
+### State Variables, Geometry, and Boundaries
+
+Arrays remain `(W,L,time)`; occupied sites 1, empty sites 3. Keep the source topology and coefficients exactly. Three-site bookkeeping uses `[4,1,2]` in column-major 2×2 storage, as verified above.
+
+| Physical detail | Adopted rule / mapping | Evidence and status |
+|---|---|---|
+| Three Mn vectors and yz easy axes | Existing reduction and permutation above | [1, Sec. II]; existing measured static correspondence |
+| Spatial coordinates, shells and periodic seams | No changes to `distrib.m` or interaction masks | REFERENCE MISSING for physical construction, as in the audit; blocks physical topology claims, not this solver repair |
+| Boundary masks | Execute the same source at every stage | Software-preservation choice; no new physical claim |
+
+### Hamiltonian
+
+Unchanged. The reference triangle energy and native factor-of-two anisotropy distinction are given in the preceding comparison. Do not repair nonreciprocal larger-lattice weights as part of this change.
+
+### Parameters and Evidence
+
+Production parameters remain unchanged. Figure checks explicitly use the preceding reference parameter table and `Mn3Sn_3atoms/FIG2_FIG4_SETTINGS.md`: alpha 0.003, exchange field 100.812 T, K 0.196 meV with field factor 2, D 0.833 meV, moment 3 mu_B, Ms 441850 A/m, thickness 30 nm, thetaSH 0.06, gamma 1.760859644e11 rad/(s T). These are the reference-code realization of [1, Sec. II]; they are not new production defaults.
+
+### Effective Fields and Units Check
+
+Unchanged exchange, DMI and anisotropy expressions in tesla are evaluated from each complete unnormalized stage state. Keep external fields and torque amplitudes constant within a step. Noise, when selected, retains one draw per outer step; no stochastic convergence claim. Preserve the moment factors and energy-gradient checks of the preceding comparison.
+
+### Dynamical Equation and Nonconservative Torques
+
+Use precisely the existing scalar LLGS RHS, including both SOT/STT damping-dependent cross terms and field-like terms, matching `sections/llg_equation.tex` equations `eq:llg-gilbert` and `eq:ll-with-flt`. Extract the first-stage derivative without normalization or timestep factors; integration owns those factors. Validate all four torque amplitudes against the implicit Gilbert equation on unit spins.
+
+### Initial Conditions, Solver, and Outputs
+
+Classical RK4 stage states are m, m+dt*k1/2, m+dt*k2/2, m+dt*k3; recompute fields at every stage, combine with weights 1,2,2,1, normalize only the final occupied spins. Preserve empty entries at every stage. Preserve current chunking/time-label behavior and document its existing limitation; figure checks use exact update-derived physical times and aligned pulse edges.
+
+Figures: 24 low-field combinations (six seeds, both current signs, both 100 Oe field signs), including Fig. 4(a)'s seed 210; the 24 Figure 5 cases already listed above. Current magnitude 5e10 A/m², drives 1–4 ns, total 5 ns, dt 5/2.5/1.25 fs, output interval 0.25 ps. No ferromagnetic calculation. Fresh `.sisyphus/frozen-field-*` directories protect production outputs. Full sweeps may use the existing compiled replay only after validation against the changed production MATLAB loop, including startup and driven states.
+
+### Implementation Mapping
+
+| Stage | Implementation | Verification gate |
+|---|---|---|
+| Structure/topology | Unchanged source and static checker | Three-site mapping, impulse fields and energy gradients pass |
+| RHS | New scalar `atom_llgs_rhs.m`, unchanged original stage-one algebra | All torque signs/cross terms and implicit Gilbert residual <1e-12 |
+| Integration | Four field/RHS passes in `integrate_llg.m`; occupied normalization | Actual production-loop replay <1e-10; vacancy and norm checks; short larger-array run; fourth-order convergence |
+| Figures | Extend isolated benchmark tooling, reuse verified C++ replay | All 48 destinations within 0.1 degree; mean trajectory halving errors <1e-5; Fig. 4(a) crossing shift <1 ps |
+| Documentation/viewer provenance | README, report, plan, source-hash snapshot | Commands and limitations accurate; viewer source/impulse check passes |
+
+Proceed only after each dependent gate passes. Preserve existing static excerpts so the visualization and historical checks continue to operate. No geometry viewer redesign is needed. A read-only independent verifier may review the production patch and evidence, as recommended by the skill.
+
+### Verification and Acceptance Criteria
+
+Use MATLAB R2024b and the existing GPU where available; record actual environment. Check finite states, occupied norms <1e-12, exact zero empty slots, preprojection errors, and order near four on a coupled deterministic case. Replay the actual production loop, not merely another corrected formula. Full figure checks require the source-matched compiled pilot to pass first. Protect source/result hashes in the reference checkout and all historical MAT files. No digitized paper curves are available, so quantitative claims concern reference-code agreement; published-figure agreement remains qualitative.
+
+### References
+
+[1] Zhengde Xu, Xue Zhang, Yixiao Qiao, Gengchiau Liang, Shuyuan Shi, Zhifeng Zhu, Deterministic spin-orbit torque switching including the interplay between spin polarization and kagome plane in Mn3Sn, Physical Review B **109**, 134433 (2024). DOI: https://doi.org/10.1103/PhysRevB.109.134433. Source locators and prior reviewed-PDF evidence are recorded in the preceding comparison. This task consults that existing evidence plus the reference settings/report and executable sources. A fresh targeted `_knowledge` filename search returned no accessible matching record; no new physical construction is inferred.
+
+### Assumptions, Missing References, Risks, and Approval Questions
+
+The explicit fix request authorizes this narrow repair and benchmark scope; no further approval is needed for it. Production defaults cannot reproduce these figures without the explicitly matched parameters. Larger-lattice nonreciprocity, physical geometry, legacy solver defects, output-time drift, thermal/dipole/fixed-edge validation remain separate limitations. No new dependencies, network access, reference-repository writes, commits, or result overwrites are authorized or needed.
+
+
+### Completed repair and verification
+
+Implemented the four complete-lattice field/RHS stages in `integrate_llg.m`, using `atom_llgs_rhs.m` with the original derivative algebra. Static fields, production default parameters, source line endings, and historical kernels remain unchanged. The visualization snapshot was refreshed and its 367,700 operator comparisons and source hashes pass.
+
+The actual production loop passes startup and eight driven GPU replay checks (maximum spin discrepancy 7.38e-14), exact-zero vacancy/finite/norm checks, both legacy boundary flags on short 5×5 runs, all-torque Gilbert residual 3.20e-16, and a generic noncoplanar convergence test (orders 3.8016 and 3.9136). CPU convergence changes only transfer/scalar-expansion mechanics in the isolated harness. These checks do not validate the physical periodic seams or optional paths.
+
+All 192 full diagnostic trajectories completed. All 48 physical cases match the expected destinations at 5/2.5/1.25 fs. Maximum mean-component differences under halving are 2.13797e-9 and 1.33636e-10 (about sixteenfold); Figure 4(a) crosses mean-z zero at 1.399001533608 ns; Figure 5's sampled transition bracket remains 275 < H ≤ 300 Oe. Full runs use the validated C++ diagnostic; short source checks execute actual MATLAB/GPU integration. The final-angle error is at most 6.63e-7 degree and every-update projected norm error at most 2.22e-16.
+
+An additional stricter equal-dt per-spin comparison, introduced during harness construction, misses 1e-9 at 275 Oe: the discrepancy is 2.93e-9, while the mean-component difference is only 7.77e-12. Retain this as `strict_spin_match_pass=false`; the planned mean-observable and convergence gates pass. The compiled modes differ only in field arithmetic ordering. No Hamiltonian, parameter, or model choice was adjusted to force agreement.
+
+Results, limitations, plots and complete commands are in [docs/frozen-field-repair.md](docs/frozen-field-repair.md). Raw artifacts use `.sisyphus/frozen-field-20261102-01/`. Independent read-only review found no blocking defect in the default deterministic repair or harnesses; fixed-edge stage constraints remain outside the validated scope and are explicitly documented. Reference sources/results and historical MAT files are protected by hashes. No network, dependency installation, commits or pushes occurred.
+
+
+## Reference parameter alignment and explicit protocols — 2026-11-02
+
+### Goal and Success Criteria
+
+The user approved the preceding recommendation: adopt the three-atom conventions, explicit figure protocols and an undriven relaxation mode, while deferring unequal spatial exchange weights. Preserve the prior uncommitted RK4 repair and all existing results. Success requires native three-site parameters/fields to equal the reference without material overrides, correct finite pulse timing and saved-state times, verified figure presets, and unchanged spatial masks.
+
+### Model Classification and Equation Family
+
+Class 4 fixed-length spatial LLGS; figure presets use the established Class 5 three-vector reduction [1, Sec. II]. The equation, torque cross terms and normalization remain unchanged. Electronic structure is not modeled.
+
+### Existing Behavior and Reference Implementations
+
+Current source and the completed repair above are the starting point. `Mn3Sn_3atoms/main.m`, `field_eta.m`, `FIG2_FIG4_SETTINGS.md`, and `docs/rk4-verification.md` provide exact implementation values/protocols. Reuse the already inspected equation references and static/dynamical verification. No reference repository edits. Record the pre-task source under `.sisyphus/parameter-alignment-before/`.
+
+### State Variables, Geometry, and Boundaries
+
+| Physical detail | Adopted mapping | Evidence / status |
+|---|---|---|
+| Spatial lattice and interactions | Keep `distrib.m` and all exchange/DMI masks byte-for-byte unchanged | Existing audited implementation; physical geometry/shell mapping remains REFERENCE MISSING; explicitly deferred |
+| Figure state | 2×2 open array, occupied reference order `[4,1,2]` | Software representation verified by earlier impulses; three-spin model [1, Sec. II] |
+| Relaxation state | Existing 5×5 open array and 121-degree seed | Existing software example, no new physical-size claim |
+| Film thickness vs spacing | `tz=30 nm`; retain `d=0.4 nm` | Film thickness [1, Sec. II]; d is unchanged legacy geometry, not newly certified |
+
+### Hamiltonian
+
+Adopt onsite energy `-Ksim*sum((e_i dot m_i)^2)` with Ksim=0.196 meV, giving field `2*Ksim/mu*(e_i dot m_i)*e_i`. This replaces the previous half-strength field while preserving the energy parameter's physical meaning [1, Sec. II; exact normalization confirmed by reference `hk6`]. Triangle exchange, DMI and Zeeman energy remain as specified above. Do not infer a reciprocal Hamiltonian for the unchanged larger-array weights.
+
+### Parameters and Evidence
+
+Use J=100.812*(3*mub) J, gamma=gam=1.760859644e11 rad/(s T), msRE=441850 A/m and tz=30e-9 m, matching reference source. Keep moment 3*mub, K=0.196 meV, D=0.833 meV, alpha=0.003, thetaSH=0.06, polarization +x, no STT/FLT/noise/dipoles. The exact exchange field is a code-matching value (17.50806 meV); the paper quotes nominal 17.53 meV [1, Sec. II]. Ms approximates 6*mu/Vcell; do not use one atomic moment per crystallographic cell as the film magnetization. Keep T=100 K inactive and other legacy inactive parameters unchanged.
+
+### Effective Fields and Units Check
+
+`B=-dE/dm / mu` gives tesla, with J/T moments and J energies. Derive the anisotropy factor two explicitly above. The torque amplitude remains `(hbar/e)*thetaSH*Jc/(2*Ms*tz)` in SI; the stored eV-second hbar already supplies the numerical charge cancellation. No extra charge factor. Check both the energy gradient and identical native/reference coefficients.
+
+### Dynamical Equation and Nonconservative Torques
+
+Unchanged explicit LLGS from the prior specification and `sections/llg_equation.tex`, `eq:ll-with-flt`. Multiply applied field and all existing torque amplitudes by a common per-step pulse gate for the selected figure protocol. Keep that gate fixed across stages; align pulse edges with step boundaries. No change to thermal-noise interpretation or other optional paths.
+
+### Initial Conditions, Solver, and Outputs
+
+Add a small `mn3sn_protocol(name,value)` function for explicit fixed presets. Default `relaxation`: 5×5, 121-degree seed, zero drive, 10 ps, 0.5 fs, 100 fs samples, 1 ps chunks. Figure presets: 2×2, 5 ns, 5 fs, 0.25 ps samples, 10 ps chunks, on at 1 ns/off at 4 ns. Fig2a/b/c use seed270 and signs (+,+),(+,-),(-,-) with 100 Oe; fig2d accepts the six seeds at (+,+); fig4a uses seed210; fig5a accepts the twelve tested fields with seed210; fig5b/c accept the six seeds at 1000 Oe and opposite current signs [1, Figs. 2,4,5]. A preset selects one trajectory, not an automatic full sweep. The ferromagnet stays excluded.
+
+Correct the chunk accounting needed for exact pulses: each chunk stores its initial state plus all requested updates, retain each sampled boundary once, include t=0 and the final state, and derive output times from completed updates. This necessary timing repair changes default output from 100 to 101 frames and actual duration from 9.995 to 10 ps. Keep the legacy MAT save path and schema; tests never execute that save. Manual preset selection remains in main.m because it clears the workspace.
+
+### Implementation Mapping
+
+| Stage | Implementation | Verification gate |
+|---|---|---|
+| Structure | No mask/topology change; configurable initial angle only | Preserve distrib hash and normalized exchange/DMI impulse matrices |
+| Material/fields | Main parameter constants and factor-two anisotropy field | Native/reference coefficients equal; independent finite-difference anisotropy and all static gates pass |
+| Protocols/time | Named presets, integer pulse gate, correct chunk states/sample indices | All presets and seeds checked; exact t=0/final, no duplicate boundaries, chunk-invariance and pulse-edge replays |
+| Regression | Adapt existing checks to K as energy coefficient; use native parameters | Actual source GPU replays plus inherited figure diagnostic convergence; no material overrides masking a mismatch |
+| Views/docs | Refresh factor-two display and source hashes; README/AGENTS/changelog | Node static checks, MATLAB export, accurate commands and explicit spatial limitation |
+
+Keep field evaluation, scalar RHS and orchestration separate. Advance only after each dependent gate passes. A read-only verifier may review the changes per the spin-dynamics skill.
+
+### Verification and Acceptance Criteria
+
+Reuse source-based triangle impulses/energy-gradient checks (<1e-11 T and <1e-7 scaled residual), all-torque Gilbert checks (<1e-12), GPU/source replay (<1e-10 spin difference), norms (<1e-12), exact vacancies and coupled convergence. Add deterministic multi-chunk/pulse tests against a single chunk and reference gate scheduling. Validate every named preset/choice, and audit all 48 figure cases against native coefficients and the existing full-trajectory diagnostic. Reuse completed figure evidence when equivalent parameters/equations are demonstrated; do not claim full 5 ns GPU runs. Snapshot/hash-check existing results and the reference checkout. No installs or network.
+
+### References
+
+[1] Zhengde Xu, Xue Zhang, Yixiao Qiao, Gengchiau Liang, Shuyuan Shi, Zhifeng Zhu, Deterministic spin-orbit torque switching including the interplay between spin polarization and kagome plane in Mn3Sn, Physical Review B **109**, 134433 (2024). DOI: https://doi.org/10.1103/PhysRevB.109.134433. Existing reviewed-paper/source evidence and exact local record are recorded above; this step uses the verified reference source and figure settings. No new physical geometry is introduced.
+
+### Assumptions, Missing References, Risks, and Approval Questions
+
+The user's latest message approves these changes and explicitly postpones spatial exchange-weight repair. Larger-lattice reciprocity, geometric evidence, dipoles, noise and fixed edges remain unvalidated. Presets use original ideal 120-degree seeds; startup ringing is retained. Full GPU figure runs are potentially slow; the verified compiled diagnostic remains the regression sweep backend. Do not repeat approval for the authorized changes; update the user about the necessary clock correction. No commits or pushes.
+
+
+### Alignment results and implementation checkpoints
+
+The approved native parameters now equal the reference's stored values for mu, J, D, Kfield=2*Ksim, gamma, alpha, Ms, thickness and SOT. Actual-source static fields and independent energy derivatives pass (2.84e-14 T and <2.23e-11 scaled residual). The 2K factor is explicit in the field; Ksim retains its 0.196 meV energy meaning.
+
+`mn3sn_protocol.m` exposes one relaxation case and named Fig. 2/4(a)/5 cases. Actual main initialization passed all 35 valid preset/choice combinations and rejected unsupported choices, including the ferromagnet. Eight production GPU pulse fixtures cover all drive-sign combinations and edges inside/on chunk boundaries: independent-reference discrepancy <=1.05e-15 and single-vs-multiple-chunk difference zero. Irregular sampling, unique boundaries, t=0/final samples and exact update counts pass. Default output is now 101 states at 0–10 ps; figure presets produce 20,001 states at 0–5 ns.
+
+The native-parameter production convergence orders remain 3.8016/3.9136, and startup GPU replay discrepancies are <=4.43e-14. All 192 full compiled figure trajectories are bit-for-bit identical to the preceding explicitly matched figure runs. All destinations and refinement gates pass; the recorded strict auxiliary per-spin comparison exception at 275 Oe is unchanged. See [docs/reference-protocols.md](docs/reference-protocols.md) for commands, results and limits.
+
+The source/display impulse checks pass across ten array sizes and both boundary flags, with 367,700 exchange/DMI operator comparisons. Browser inspection confirmed the updated 2K/mu display. Exact source comparisons preserve distrib.m, exchange masks, shifts, exchange field and DMI expressions; no spatial-weight repair was made. Independent read-only review found no blocking defect in the physics, presets, pulse indexing or chunk tests. All outputs use `.sisyphus/parameter-alignment-20261102-01/`; historical results and reference source remain protected.
+
+Final driven GPU replays passed (maximum spin discrepancy 7.38e-14), and the source/result preservation check passed for all 30 recorded paths. Whitespace checks passed for tracked diffs and new text files. No production output or historical result was overwritten; no commit or push was made.

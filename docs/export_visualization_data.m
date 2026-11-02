@@ -7,7 +7,7 @@ root = fileparts(fileparts(mfilename('fullpath')));
 original = pwd;
 cleanup = onCleanup(@() cd(original));
 cd(root);
-names = {'main.m','constantfile.m','distrib.m','systemgeneration.m','integrate_llg.m'};
+names = {'main.m','constantfile.m','mn3sn_protocol.m','distrib.m','systemgeneration.m','integrate_llg.m'};
 sources = struct(); hashes = struct();
 for f = 1:numel(names)
     key = strrep(names{f},'.m','');
@@ -18,6 +18,8 @@ for f = 1:numel(names)
     hashes.(key) = lower(reshape(dec2hex(typecast(digest.digest(),'uint8'),2).',1,[]));
 end
 constantfile;
+protocol=mn3sn_protocol('relaxation');
+initial_theta_deg=protocol.seed_deg;
 assert(strcmp(assignment(sources.main,'DMIenable'),'1'), ...
     'Exporter currently supports DMIenable=1 only; review the snapshot scope before refreshing.');
 Jintra = assignment(sources.main,'Jintra');
@@ -110,7 +112,7 @@ for k = 1:size(sizes,1)
                 dfields=[zeros(n,1) hdmi_y(:) hdmi_z(:)]*musRE/Dsim;
                 closeEnough(dfields(occupied,:),target(occupied,:));
                 target=zeros(n,3); target(j,:)=axes(j,component)*axes(j,:);
-                afields=[hani_x(:) hani_y(:) hani_z(:)]*musRE/Ksim;
+                afields=[hani_x(:) hani_y(:) hani_z(:)]*musRE/(2*Ksim);
                 closeEnough(afields(occupied,:),target(occupied,:));
                 assert(hdmi_x==0);
                 if component==1, measuredE(occupied,j)=-efields(occupied,1); end

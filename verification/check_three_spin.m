@@ -9,6 +9,11 @@ ref=struct('mu',3*mub,'J',Hex_2*3*mub,'D',DMI*3*mub, ...
     'Kfield',hk6*3*mub,'gamma',gam,'alpha',alp,'Ms',Ms_Fe*1e3, ...
     'thickness',tFL,'b',thetaSH*5e10/(2*tFL*Ms_Fe*1e3/hbar));
 cd(out);
+for name=fieldnames(ref)'
+    key=name{1};
+    assert(abs(native.(key)-ref.(key))<1e-13*abs(ref.(key)), ...
+        'Native/reference parameter mismatch: %s',key);
+end
 axes=[zeros(3,1),sin([1;9;5]*pi/6),cos([1;9;5]*pi/6)];
 % Stage 1: original occupation, initializer, and all 9 Cartesian impulses.
 [~,~,~,geometry]=spatial(zeros(3),native,fullfile(out,'native'));
@@ -80,16 +85,16 @@ function p=parameters(folder)
 original=pwd; cleanup=onCleanup(@() cd(original)); cd(folder);
 constantfile;
 src=fileread('main.m');
-names={'Jintra','Ksim','Dsim','gRE','volume','d','alp','thetaSH'};
+names={'Jintra','Ksim','Dsim','gamRE','msRE','tz','alp','thetaSH'};
 for i=1:numel(names)
     token=regexp(src,['(?m)^\s*' names{i} '=([^;]+);'],'tokens','once');
-    % gRE follows gTM on the same source line.
+    % Allow assignments following another assignment on the same line.
     if isempty(token), token=regexp(src,[';' names{i} '=([^;]+);'],'tokens','once'); end
     assert(~isempty(token),'Missing source assignment: %s',names{i}); eval([names{i} '=' token{1} ';']);
 end
-p=struct('mu',3*mub,'J',Jintra,'D',Dsim,'Kfield',Ksim, ...
-    'gamma',gRE*mub/(hbar*ele),'alpha',alp,'Ms',3*mub/volume, ...
-    'thickness',d,'b',hbar/2*thetaSH*5e10/(3*mub/volume*d));
+p=struct('mu',3*mub,'J',Jintra,'D',Dsim,'Kfield',2*Ksim, ...
+    'gamma',gamRE,'alpha',alp,'Ms',msRE, ...
+    'thickness',tz,'b',hbar/2*thetaSH*5e10/(msRE*tz));
 end
 
 function [ex,dm,an,geometry]=spatial(m,p,folder)
@@ -102,7 +107,7 @@ eval(fileread(fullfile(folder,'systemgeneration.m')));
 map=[4 1 2];
 geometry=struct('occupation',atomtype_,'axes',[coeffs_1(map)' coeffs_2(map)' coeffs_3(map)'], ...
     'initial',[mx_init(:) my_init(:) mz_init(:)],'map',map);
-Jintra=p.J; Ksim=p.Kfield; Dsim=p.D;
+Jintra=p.J; Ksim=p.Kfield/2; Dsim=p.D;
 muigpu=ones(2); muigpu(atomtype_==1)=p.mu;
 src=fileread(fullfile(folder,'integrate_llg.m'));
 setup=between(src,'AsimnextL=zeros','for ctL=1:natomL');

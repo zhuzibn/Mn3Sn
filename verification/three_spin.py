@@ -76,7 +76,7 @@ def preserve(out):
 def run_case(out, spec, sample_ps=.25):
     mode=spec['mode']
     args=[str(out/'replay'), str(out/(spec['name']+'.bin')),
-          str(out/('native.params' if mode==0 else 'reference.params')), str(mode),
+          str(out/('native.params' if mode in (0, 2) else 'reference.params')), str(mode),
           *[str(spec[k]) for k in ['dt_fs','seed_deg','field_Oe','current','duration_ns','on_ns','width_ns']],
           str(sample_ps), 'physical']
     if 'seed_file' in spec:

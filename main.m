@@ -5,7 +5,7 @@ clear all;clc;close all;tic
 gpuDevice(1)%select GPU device
 %% control parameter
 constantfile;
-clear gam
+protocol=mn3sn_protocol('relaxation');%e.g. ('fig4a'), ('fig5a',300), ('fig5b',210)
 rk4=1;%1:rk4,0:heun Method,2:4th predictor-corrector
 bc=1;%0.periodic condition;1,not periodic
 DMIenable=1;
@@ -50,7 +50,8 @@ if enablefixedge
     mzright=-1;  
 end
 %% system generation
-natomW=5;natomL=5;%行数为奇，列数为奇 
+natomW=protocol.natomW;natomL=protocol.natomL;
+initial_theta_deg=protocol.seed_deg;
 %note this is different to the x,y,z in h_ex or hdmi etc
 % compositionn=0.1;%composition percentage (X) of RE element, e.g. GdX(FeCo)1-X
 d=0.4e-9;%[m],lattice constant
@@ -63,15 +64,15 @@ Ksim=0.196*1e-3*ele;
 %or 0.807246e-23;%[J], easy-axis anisotropy, 2011-nature-I. Radu, 
 % this value is questionable
 %Renjie and Zhengde for pointing out that 0.4e-3*ele is too large.
-Jintra=2.8083e-21;% 17.53 meV
+Jintra=100.812*(3*mub);%[J/link], exact Mn3Sn_3atoms exchange field normalization
 Jfefe=-2.835e-21;Jfegd=1.09e-21;%[J/link], 2011-nature-I. Radu
-gTM=2.2;gRE=2;%g-factor
+gTM=2.2;%legacy inactive TM g-factor
 gamTM=gTM*mub/(hbar*ele);%1/(s.T)refer to "PRL 97, 217202 (2006), Jiang Xin"
-gamRE=gRE*mub/(hbar*ele);
-tz=d;%[m],thickness of FiM
+gamRE=gam;%[rad/(s T)], reference Mn3Sn gyromagnetic ratio
+tz=30e-9;%[m], magnetic film thickness; independent of spatial spacing d
 volume=0.3778e-27;% 0.3778 [nm3]
 musRE=3*mub;musTM=2.217*mub;%[J/T]magnetic moment [1]
-msRE=musRE/volume;%[A/m], saturation magnetization
+msRE=441.85e3;%[A/m], reference film magnetization, approximately 6*musRE/volume
 msTM=musTM/volume;
 if DMIenable
     Dsim=0.833*1e-3*ele;%[J], DMI
@@ -81,9 +82,10 @@ end
 % alp=0.003;%Gilbert damping
 alp=0.003;
 %% electrical parameters
-jcSOT=0e9;%[A/m2]
+jcSOT=protocol.current;%[A/m2], signed pulse amplitude
 jcSTT=0e9;%[A/m2]
-Hext=[0,0,0];% corresponding to runtime2
+Hext=protocol.field;%[T], pulse amplitude
+pulse_start=protocol.pulse_start;pulse_end=protocol.pulse_end;
 %% SOT parameters
 SOT_DLT=1;%1(0),enable(disable) SOT damping torque
 SOT_FLT=0;%1(0),enable(disable) SOT field-like torque
@@ -117,24 +119,13 @@ BDSTTTM=STT_DLT*hbar/2*etaSTT*jcSTT/(msTM*tz);
 %% other parameters
 T=100;%[K]
 %% time control
-gpusave=1e-12;%how often saving gpu data
-gpurun_number=10;
-tstep=5e-16;
-savetstep=200;%this is used to reduce data size
-
-gpusteps=round(gpusave/tstep);
-runtime=gpurun_number*gpusave;%second run for dw motion
-totstep=round(runtime/tstep);
-t=linspace(tstep,runtime,totstep);%This need to be optimized
-
-if ~mod(gpusteps,savetstep)==0
-    error('gpusteps should be multiple integer times of savetstep, otherwise there might be errors')
-end
-
-tmp1=ones(1,gpusteps);
-tmp2=tmp1(1:savetstep:end);
-final_m_savestep=size(tmp2,2);
-clear tmp1 tmp2
+gpusave=protocol.gpusave;%physical duration of one integration block
+runtime=protocol.runtime;
+tstep=protocol.tstep;
+savetstep=protocol.savetstep;
+gpurun_number=round(runtime/gpusave);
+gpusteps=round(gpusave/tstep)+1;%initial state plus every update in the block
+totstep=gpurun_number*(gpusteps-1);%number of updates, excluding the initial state
 
 if (SOT_DLT || SOT_FLT) && ~(rk4==1)
     error('only rk4 is implemented for spin torque driven')
