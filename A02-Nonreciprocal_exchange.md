@@ -195,16 +195,16 @@ Zhengde recalled the first discussion as **2024.2.3**. No presentation with that
 | P5 | [2024.4.23.pptx][P5], slides 2–8 | Three-atom success, edge-doubled failure, timestep/size/DMI/damping comparisons |
 | P6 | [2024.4.28.pptx][P6], slides 3–5 | Later timestep and system-size comparisons; exchange masks not restated |
 
-Presentation links are relative to this repository so that they remain usable under the same OneDrive folder layout on Windows or WSL. The original discussion and presentations were not modified. The historical presentation review involved no new spatial simulations; the separate Figure 5 verification above documents its own numerical checks.
+External presentation and paper links use absolute Windows paths because this checkout is on D:. In WSL, replace `C:/Users/zzf-m/OneDrive/` with `/mnt/c/Users/zzf-m/OneDrive/`. The original discussion and presentations were not modified. The historical presentation review involved no new spatial simulations; the separate Figure 5 verification above documents its own numerical checks.
 
 PRB source: Zhengde Xu, Xue Zhang, Yixiao Qiao, Gengchiau Liang, Shuyuan Shi, Zhifeng Zhu, Deterministic spin-orbit torque switching including the interplay between spin polarization and kagome plane in Mn3Sn, Physical Review B **109**, 134433 (2024). DOI: 10.1103/PhysRevB.109.134433. [Local source PDF][PRB]; methodology and protocol pp. 134433-2–3, Figure 5 and discussion p. 134433-5.
 
 [D]: discussion_zhengde.md
-[P0]: <../../../COSMAL/本科生研究生/研究生/archived/2021/徐正德/weekly report/2024.3.19.pptx>
-[P1]: <../../../COSMAL/本科生研究生/研究生/archived/2021/徐正德/weekly report/2024.3.28.pptx>
-[P2]: <../../../COSMAL/本科生研究生/研究生/archived/2021/徐正德/weekly report/2024.4.2.pptx>
-[P3]: <../../../COSMAL/本科生研究生/研究生/archived/2021/徐正德/weekly report/2024.4.9.pptx>
-[P4]: <../../../COSMAL/本科生研究生/研究生/archived/2021/徐正德/weekly report/2024.4.12.pptx>
-[P5]: <../../../COSMAL/本科生研究生/研究生/archived/2021/徐正德/weekly report/2024.4.23.pptx>
-[P6]: <../../../COSMAL/本科生研究生/研究生/archived/2021/徐正德/weekly report/2024.4.28.pptx>
-[PRB]: <../../../papers/AFM/2024-Deterministic spin-orbit torque switching including the interplay between spin-PRB-zhengde Xu.pdf>
+[P0]: <C:/Users/zzf-m/OneDrive/COSMAL/本科生研究生/研究生/archived/2021/徐正德/weekly report/2024.3.19.pptx>
+[P1]: <C:/Users/zzf-m/OneDrive/COSMAL/本科生研究生/研究生/archived/2021/徐正德/weekly report/2024.3.28.pptx>
+[P2]: <C:/Users/zzf-m/OneDrive/COSMAL/本科生研究生/研究生/archived/2021/徐正德/weekly report/2024.4.2.pptx>
+[P3]: <C:/Users/zzf-m/OneDrive/COSMAL/本科生研究生/研究生/archived/2021/徐正德/weekly report/2024.4.9.pptx>
+[P4]: <C:/Users/zzf-m/OneDrive/COSMAL/本科生研究生/研究生/archived/2021/徐正德/weekly report/2024.4.12.pptx>
+[P5]: <C:/Users/zzf-m/OneDrive/COSMAL/本科生研究生/研究生/archived/2021/徐正德/weekly report/2024.4.23.pptx>
+[P6]: <C:/Users/zzf-m/OneDrive/COSMAL/本科生研究生/研究生/archived/2021/徐正德/weekly report/2024.4.28.pptx>
+[PRB]: <C:/Users/zzf-m/OneDrive/papers/AFM/2024-Deterministic spin-orbit torque switching including the interplay between spin-PRB-zhengde Xu.pdf>

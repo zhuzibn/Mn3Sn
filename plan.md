@@ -950,3 +950,124 @@ All 96 trajectories pass: 60 primary 5 ns runs, 30 perturbed-equilibrium recover
 Candidate code and checks are in `verification/spatial_relaxation/`, with raw artifacts in `.sisyphus/anisotropy-trial-20261102-01/`. [The report](docs/anisotropy-six-state.md) records exact rerun commands, environment, the energy/field derivation, stability and evidence limits. MATLAB source/GPU preparation and Hessian checks exited successfully. Production MATLAB source hashes match the previous export. No changelog entry is needed for this isolated diagnostic/test addition; no production behavior or default changed.
 
 The final MATLAB comparison and spin-configuration exports also exited successfully; both PNGs were visually inspected. Plotting checks verify sample/series counts and angle transformations. New and changed text passed whitespace checks and Python syntax checks, and `git diff --check` passed. `.gitignore` already covers all generated raw artifacts and caches. Documentation updated: README, this plan, the baseline report's follow-up link and `docs/anisotropy-six-state.md`; no durable agent rules changed.
+
+## Proposed unequal-anisotropy switching comparison — 2026-11-03
+
+**Status: approved by the user on 2026-11-03; simulation, independent verification, figures and report complete.** Created `experiment/unequal-anisotropy-prb2024` from `main`, revision `0af802c`, carrying only the preceding plan update. This section extends the completed anisotropy investigation without replacing its evidence. No production-source changes, commits or pushes are authorized by this diagnostic scope.
+
+### Goal and Success Criteria
+
+Determine whether reciprocal $J/2,D/2$ bonds with $K_i=Kz_i/4$ preserve the switching behavior associated with PRB 2024 Figures 2, 4(a), and 5 [1], using the repository's already verified figure protocols. Report final-state agreement, transient differences, field-transition shifts, and size dependence separately. A reproducible disagreement is a valid investigation outcome. Fig. 4(b)'s ferromagnet is outside this Mn3Sn model.
+
+### Model Classification and Equation Family
+
+Class 3 source-derived finite spin graph, three Mn easy-axis classes, fixed-length deterministic LLGS. The intended Class 4 crystallographic interpretation remains unresolved. Each occupied site carries a unit vector and moment $3\mu_B$; vacancies remain exactly zero. The three-spin control represents the existing coherent sublattice model. Electronic structure and Hall signals are outside scope.
+
+### Existing Behavior and Reference Implementations
+
+The current three-spin implementation already has documented numerical agreement with `Mn3Sn_3atoms` and qualitative agreement with the target figures; see `docs/reference-protocols.md` and `docs/frozen-field-repair.md`. The candidate has passed the undriven six-state tests in `docs/anisotropy-six-state.md`. That result does not establish driven equivalence. `verification/spatial_relaxation/spatial.cpp` currently implements undriven LLG only, so its RHS must acquire source-checked external-field and SOT inputs before a figure comparison is meaningful.
+
+Inspected the active source, protocol factory, figure runner and candidate harness. ASTRO `AGENTS.md` and `README.md` supplied workflow context only. Read `presentations/equations/spintronic_methods.tex`, `sections/hamiltonian.tex` (`eq:atomistic-effective-field`), `sections/llg_equation.tex` (`eq:ll-with-flt`), and `sections/atomistic_boundaries.tex`. These govern field differentiation, the Gilbert cross term and finite-edge checks, without supplying new Mn3Sn material evidence.
+
+### State Variables, Geometry, and Boundaries
+
+| Physical detail | Adopted value or rule | Builder or interaction mapping | Qualifying reference and exact locator | Evidence status |
+|---|---|---|---|---|
+| Sublattice orientation | Existing a,b,c easy axes and spin ordering | Unchanged source-exported axes and occupation | Prior [1, Sec. II] comparison recorded above | Reuse verified implementation convention |
+| Finite graph | Existing 2×2 control; 5×5, 13×14, 21×22 patches with 16, 130, 336 spins | Existing measured occupied-site operators | No new physical construction source | Explicit software graphs; no crystal claim |
+| Lattice constants, physical basis, stacking, shell distances | None introduced | No builder changes | REFERENCE MISSING in the existing audit | Blocks crystallographic interpretation, not this graph diagnostic |
+| Bond coefficients and counting | Positive AFM $J/2$, directed $D\sigma_{ij}/2$; each bond once in energy | Existing reciprocal candidate and triangle decomposition | Algebraic trial documented above; no published shell assignment | Mathematical candidate, not a fitted physical bond model |
+| Anisotropy | $K_i=Kz_i/4$, using actual occupied exchange degree | Existing `triangle` diagnostic mode | REFERENCE MISSING for real Mn3Sn edge anisotropy | Explicit hypothesis under test |
+
+All patches remain open and unpinned. The existing periodic masks are unverified; no periodic extension is included. Size comparisons retain edge and interior observables rather than treating these patches as bulk samples.
+
+### Hamiltonian
+
+Retain the candidate internal energy and add the uniform applied flux density:
+
+$$
+E(t)=\sum_{i<j}\left[\frac J2\mathbf m_i\cdot\mathbf m_j-\frac D2\sigma_{ij}\hat x\cdot(\mathbf m_i\times\mathbf m_j)\right]-\sum_i\frac{Kz_i}{4}(\mathbf e_i\cdot\mathbf m_i)^2-\mu\sum_i\mathbf B_{\rm ext}(t)\cdot\mathbf m_i.
+$$
+
+This is the previously verified candidate convention plus the Zeeman term; SOT is nonconservative. Reverse DMI signs obey $\sigma_{ji}=-\sigma_{ij}$. The isolated candidate triangle has $J/2,D/2,K/2$: its undriven RHS is half the original triangle's RHS. With unchanged external field and SOT, the entire driven RHS is not halved, so a time-axis rescaling cannot establish driven equivalence.
+
+### Parameters and Evidence
+
+Keep the executable reference conventions in `main.m` and `docs/reference-protocols.md`: $J/\mu=100.812$ T before bond weighting, $D=0.833$ meV, $K=0.196$ meV, $\mu=3\mu_B$, $\gamma=1.760859644\times10^{11}$ rad/(s T), $\alpha=0.003$, $M_s=441850$ A/m, $t_z=30$ nm, $\theta_{\rm SH}=0.06$ and polarization $+x$. These are implementation values associated with [1], not a fresh extraction of its exact numerical conventions; the documented nominal-paper versus executable exchange difference remains visible.
+
+The field/current/seed matrix comes directly from `mn3sn_protocol.m` and `verification/coupled_figures.py`: 24 combinations of six first-spin seeds and both signs of 100 Oe and $5\times10^{10}$ A/m²; 12 positive-current field-sweep cases from 175 to 500 Oe; and 12 six-seed cases at +1000 Oe with either current sign. Fig. 4(a) reuses the positive-current, +100 Oe, 210° first-spin case. Do not retune damping, moments, current, thickness, field or pulse timing to improve agreement.
+
+### Effective Fields and Units Check
+
+Use $\mathbf B_i=-(1/\mu)\partial E/\partial\mathbf m_i$. Exchange is $-(J/2\mu)\sum_j\mathbf m_j$, DMI is $(D/2\mu)\sum_j\sigma_{ij}(\mathbf m_j\times\hat x)$, anisotropy is $(2K_i/\mu)(\mathbf e_i\cdot\mathbf m_i)\mathbf e_i$, and the Zeeman field is $\mathbf B_{\rm ext}$. Energies in joules divided by moments in J/T give tesla. The half-strength bond coefficient is separate from pair counting. Recheck the combined energy gradient including Zeeman energy and preserve the source-derived DMI orientation.
+
+### Dynamical Equation and Nonconservative Torques
+
+With field-like torque and STT disabled, retain the active kernel's explicit LLGS equation:
+
+$$
+\dot{\mathbf m}_i=\frac{\gamma}{1+\alpha^2}\left[-\mathbf m_i\times\mathbf B_i-\alpha\mathbf m_i\times(\mathbf m_i\times\mathbf B_i)-b(t)\mathbf m_i\times(\mathbf m_i\times\hat x)+\alpha b(t)\mathbf m_i\times\hat x\right].
+$$
+
+Here $b=\hbar\theta_{\rm SH}j/(2eM_st_z)$ with SI $\hbar$; the source stores $\hbar$ in eV s and therefore uses its existing expression without another division by $e$. At positive reference current, $b=7.44836428\times10^{-5}$ T to the reported precision. Preserve the damping-dependent SOT cross term. Noise, dipoles, pinning and STT remain disabled. Verify the diagnostic derivative against `atom_llgs_rhs.m` and the implicit Gilbert equation before driven integration.
+
+### Initial Conditions, Solver, and Outputs
+
+Use the original ideal 120° seeds, coupled RK4, 5 fs steps, 5 ns duration and synchronized field/current pulses during $[1,4)$ ns. Hold the drive gate fixed across all four RK stages, recompute internal fields at every stage, and normalize only after combining stages. Do not substitute relaxed seeds into the paper-protocol comparison. Repeat selected cases with the existing deterministic $10^{-3}$ perturbation as a separately labeled robustness check.
+
+Save averaged observables every 0.25 ps, including t=0 and t=5 ns; retain full-spin snapshots at 5 ps and around the pulse boundaries and switching events. Following the user's explicit storage instruction, use a fresh directory outside OneDrive under `D:\spin_dynamics\simulation_results\Mn3Sn` (`/mnt/d/spin_dynamics/simulation_results/Mn3Sn` in WSL), with source/configuration hashes, commands, environment and numerical errors. Preserve root results and earlier datasets.
+
+Report both $\mathbf m_{\rm bal}=(\overline{\mathbf m}_a+\overline{\mathbf m}_b+\overline{\mathbf m}_c)/3$ and $\mathbf m_{\rm site}=N^{-1}\sum_i\mathbf m_i$, their components and `atan2d(mean_y,mean_z)`, plus sublattice spread and edge/interior trajectories. The former is the direct sublattice comparison; the latter is the actual finite-patch mean. Never normalize either mean to unit length or silently replace one with the other. Mask angles only when the in-plane mean is below $10^{-10}$; retain the component data.
+
+### Implementation Mapping
+
+| Stage | Implementation | Verification gate |
+|---|---|---|
+| Baseline and graph | Preserve `0af802c` provenance and existing datasets; reuse exported graphs, axes and triangles | Source hashes, degree counts, reciprocal exchange and antisymmetric DMI pass |
+| Static fields | Reuse candidate coefficients; add pulsed uniform Zeeman field to diagnostic | Random-state source-field difference <1e-11 T; finite-difference energy-gradient error <1e-6 T |
+| Driven RHS | Extend `verification/spatial_relaxation/spatial.cpp` with optional drives defaulting to zero; add a focused driven MATLAB replay harness | Explicit/implicit Gilbert residual passes; both drive signs and pulse-edge source/GPU replay error <1e-10 per spin component; old zero-drive fixtures unchanged |
+| Integrator and pilots | Unchanged RK4; test Fig. 2(a–c), Fig. 4(a), 275/300 Oe and both 1000 Oe polarities on the three selected sizes and triangle controls | Finite unit spins, zero vacancies, correct update/sample counts, timestep refinement; diagnose numerical failures before expanding |
+| Figure matrix | Add a focused `verification/spatial_relaxation/driven_figures.py` runner; run the 48 existing cases on the three sizes and half-strength triangle, compared with the full-strength reference | Complete per-case results, endpoint classifications, transient/threshold errors and size dependence; a scientific mismatch is recorded rather than suppressed |
+| Report | Add MATLAB comparison plots and `docs/anisotropy-switching.md`; update README and this plan | Inspect plots, retain raw components and both averaging conventions; distinguish numerical equivalence, qualitative agreement and disagreement |
+
+Proceed to each stage only after its numerical/implementation gate passes. The RHS consumes verified fields and torque amplitudes; it does not derive graph topology or material coefficients. Production root sources/defaults and their viewers remain unchanged in this diagnostic phase. A read-only independent verifier should audit the driven RHS, replay evidence and final interpretation once implementation is approved. No separate worktree is needed for sequential edits on one experimental branch.
+
+### Verification and Acceptance Criteria
+
+1. Reuse the established commands in `docs/reference-protocols.md` and `docs/anisotropy-six-state.md` in fresh directories as needed to validate source provenance. Record exact new runner and MATLAB harness commands when implemented; they do not exist yet.
+2. Require finite states, occupied norm error <1e-12, exact-zero vacancies in MATLAB fixtures, and integer-based saved times. Record maximum preprojection error. Compare 5 and 2.5 fs for every pilot; require <1e-5 maximum per-spin difference at common samples and refine further if needed. Recheck cases near any candidate transition and perturbation-sensitive cases at 1.25 fs when convergence is unresolved. A normalized trajectory alone does not pass.
+3. For Fig. 2, classify all six starts and drive signs and compare final balanced angles to the reference within 0.1°. For Fig. 4(a), compare component amplitudes, reversal direction, first zero crossing and settling; report signed differences from the recorded reference crossing near 1.399 ns. Also show the site-weighted result even if it does not reverse in the same way.
+4. For Fig. 5, measure the candidate transition bracket on the existing field grid, compare with the recorded reference bracket 275–300 Oe, and classify both high-field current signs for every seed. Refine a shifted transition locally only after its timestep convergence is established. A shifted threshold is partial agreement, even if the same two final orientations occur.
+5. Separate numerical convergence from reproduction: matching endpoints alone does not establish matching waveforms. Report maximum mean-component discrepancy, angle discrepancy where defined and switching-time differences. Reserve numerical-equivalence wording for comparisons within the existing <1e-5 mean-component refinement scale. No digitized-paper waveform accuracy is claimed without digitized reference data.
+6. Compare 16, 130 and 336 spins using both means and edge/interior observables. These three sizes test a trend, not proof of a thermodynamic limit. Keep driven spatial textures visible; do not infer coherent switching solely from a mean. Check protected-result hashes, `git diff --stat`, `git diff --check` and all new files before completion.
+
+### References
+
+[1] Zhengde Xu, Xue Zhang, Yixiao Qiao, Gengchiau Liang, Shuyuan Shi, Zhifeng Zhu, Deterministic spin-orbit torque switching including the interplay between spin polarization and kagome plane in Mn3Sn, Physical Review B **109**, 134433 (2024). DOI: https://doi.org/10.1103/PhysRevB.109.134433. After approving the plan, the user explicitly supplied the local fulltext at `/mnt/c/Users/zzf-m/OneDrive/papers/AFM/2024-Deterministic spin-orbit torque switching including the interplay between spin-PRB-zhengde Xu`. Reused the reviewed summary and Markdown for this indexed paper ID; cross-checked the adjacent source PDF, printed pp. 134433-2 through 134433-5, including the Hamiltonian, LLGS equation, Fig. 2, Table I, Figs. 4 and 5. This confirms the target signs, averaging definition, 1–4 ns pulse window, 5 fs timestep and nominal material values. The executable-reference exchange rounding remains as approved. No knowledge-base files were modified.
+
+Reviewed presentation record: `/mnt/c/Users/zzf-m/OneDrive/presentation-knowledge/notes/ee237/week15a-afm/slides.md`, read completely; slides 25–27 provide qualitative configuration-II switching context and cite [1]. They do not justify the candidate edge law or supply a new figure protocol. Code reports cited above establish executable conventions and prior test outcomes, not independent physical evidence.
+
+### Assumptions, Missing References, Risks, and Approval Questions
+
+The six-state result supports testing the candidate, not assuming reproduction. **REFERENCE MISSING:** physical edge anisotropy and code-to-crystal geometry remain unresolved after reviewing the existing audit, indexed paper identity and relevant lecture record; no new material construction or physical edge claim is permitted. C2DB is not needed for this unchanged mathematical graph. Matching the figures would support this diagnostic model in the tested regime, not establish that real Mn3Sn edges follow $Kz_i/4$.
+
+The user approved the branch and this isolated driven-comparison scope, then explicitly requested saving MATLAB results outside OneDrive. Promotion into production, additional physical terms, commits and pushes remain separate decisions. Diagnostic-only physics checks do not change production behavior; the new external-storage workflow is documented in the changelog.
+
+### Implementation checkpoints
+
+The branch is active. The local full paper confirms the approved protocols. Extended only the spatial diagnostic with uniform pulsed field and damping-like SOT; retained its existing zero-drive path. Added actual-source MATLAB/GPU replay fixtures, a standard-library Python runner/analyzer, and saved-data MATLAB plotting. Production `.m` files remain unchanged.
+
+Static and driven gates passed: source-field error at most 4.27e-14 T, independent candidate-plus-Zeeman energy-gradient error 2.13e-9 T, and normalized-spin implicit-Gilbert residual divided by gamma 4.44e-14 T. Twenty two-block MATLAB/GPU fixtures, covering pulse activation/removal and both drive polarities, match the diagnostic within 4.05e-16 per component. All twelve short size/mode combinations retain byte-identical old/new spin and scalar outputs. Initial MATLAB metadata aggregation failed on empty-structure assignment; the cell-based aggregation fix was followed by a successful complete fixture rerun.
+
+All 300 full trajectories completed: 240 primary (48 cases across the full-strength triangle, half-strength triangle and three spatial sizes), 32 pilot refinements, 24 perturbed-start/refinement runs and four extra triangle-transition runs. Maximum 5 versus 2.5 fs error is 1.13e-7 per component for the pilots and 2.31e-7 for perturbed cases, below the 1e-5 gate. Perturbed/unperturbed final states differ by at most 9.29e-14. All full-strength control means agree with the preserved reference within 7.75e-12. Maximum occupied norm error is 2.23e-16 and preprojection norm error 2.00e-12. A read-only independent verifier recomputed all 240 primary endpoints, all twelve perturbed timestep comparisons and the summary classifications.
+
+Each spatial size matches 0/24 low-field endpoints and 12/12 high-field endpoints. Positive/negative 100 Oe selects balanced 90°/270° regardless of current sign. Figure 4(a) ends near +y with negligible z, so transient zero crossings are not successful z reversal. All spatial field-sweep points from 175 to 500 Oe end at 90°; no reference-like transition is observed on that grid. The half-strength triangle matches only 4/24 low-field endpoints and shifts its sampled transition to 400–425 Oe. This is a negative reproduction result despite the earlier six-state equilibrium success. The excess-b Zeeman coupling is a supported interpretation, not an isolated causal test. Full evidence and commands are in [docs/anisotropy-switching.md](docs/anisotropy-switching.md).
+
+At the user's request, relocated this run's `-01` setup directory and `-02` result directory to `D:\simulation_results\Mn3Sn`. Verified SHA-256 for all 33 setup files and all 2,394 result files (3,881,380,031 bytes) before removing their OneDrive copies. `relocation.json` preserves the mapping and checksums; original command records retain actual execution paths. Root source/result preservation checks pass. New figures and MATLAB export logs use the external `-02` folder, and the runner now rejects new output directories within OneDrive. Historical reference datasets remain at their existing paths.
+
+All four MATLAB PNG exports completed and were visually inspected. Plot checks pass for 163 plotted series and 20,001 samples per trajectory, with no smoothing or mean normalization. MATLAB Code Analyzer reports 38 nonfatal preparation-harness warnings: 30 workspace assignments used through scripts/eval, four array-growth advisories, three variables supplied by evaluated integration code, and one scalar-length style advisory. All 20 execution fixtures pass; these warnings do not constitute a clean static-analysis result. Final source preservation, Python syntax, new-file whitespace and `git diff --check` checks pass. Documentation updated: README, project AGENTS, CHANGELOG, this plan and both anisotropy reports. No commits or pushes were made.
+
+
+### Workspace relocation — 2026-11-03
+
+The checkout and its local datasets now reside at `D:\spin_dynamics\Mn3Sn`; the two external driven-run folders are under `D:\spin_dynamics\simulation_results\Mn3Sn`. The workspace-level `relocation-20261103.json` records the mappings and SHA-256 verification. Earlier execution records and relocation manifests retain their original paths.

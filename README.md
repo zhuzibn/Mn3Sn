@@ -1,5 +1,8 @@
 # Mn3Sn spin dynamics
 
+Local checkout: `D:\spin_dynamics\Mn3Sn` (`/mnt/d/spin_dynamics/Mn3Sn` in WSL).
+Existing local data retain their paths relative to this checkout.
+
 MATLAB code for a two-dimensional, spatially resolved classical-spin model of Mn$_3$Sn, associated with the three publications listed below. The repository constructs a masked kagome-like array and integrates fixed-length LLGS dynamics using an NVIDIA GPU.
 
 **Status:** the default configuration is a small, undriven relaxation example with material conventions matched to `Mn3Sn_3atoms`. Reduced to three magnetic sublattices, the current code reproduces the switching behavior in Figures 2, 4(a), and 5 of the 2024 PRB paper; see the [reproduction results and plots](#reproduction-of-the-2024-prb-figures) below. The spatial exchange weights remain unresolved and explicitly deferred; see [plan.md](plan.md) for evidence and verification gates.
@@ -33,6 +36,8 @@ matlab -batch "run('main.m')"
 
 **Output:** `main.m` saves the entire workspace into `finalnew.mat` in the current directory, overwriting a file of that name. Preserve existing results before running. There is no implemented output-path option or restart reader. Select a protocol inside `main.m`; setting workspace variables before running it does not override its defaults.
 
+Save new simulation results, MATLAB logs and generated simulation figures outside OneDrive, under a fresh directory in `D:\spin_dynamics\simulation_results\Mn3Sn` (WSL: `/mnt/d/spin_dynamics/simulation_results/Mn3Sn`). For `main.m`, copy the root `.m` files into that external directory and run from the copy. Verification harnesses with explicit output arguments should receive the external path. Historical datasets are retained at their recorded locations.
+
 ## Relaxation and paper protocols
 
 Edit the `protocol=mn3sn_protocol(...)` line near the top of `main.m`. The default is `mn3sn_protocol('relaxation')`. For a new figure run, use a separate copy of the root `.m` files and edit/run its `main.m` to preserve existing results. Each preset runs one trajectory.
@@ -58,6 +63,8 @@ For three-spin outputs, compute the unnormalized mean over **occupied** sites an
 **Larger-array relaxation check:** on open arrays with 16–336 occupied spins, the current nonreciprocal weights retain the six reference orientations, while an isolated reciprocal `J/2,D/2` bond variant reaches only two destinations (90°/270°). See the [six reference states and comparison plots](docs/six-state-relaxation.md). Excess b-sublattice sites give these finite reciprocal patches a twofold anisotropy contribution. The earlier [one-seed stationarity check](docs/spatial-relaxation.md) showed settling for both models, which is insufficient to establish six-state equivalence. The default 10 ps run is also too short for settling. Production defaults and spatial weights remain unchanged.
 
 **Coordination-weighted anisotropy trial:** keeping reciprocal `J/2,D/2` and using $K_i=Kz_i/4$ restores all six stable reference states on those same five open arrays. Four-neighbor sites retain K; two-neighbor sites use K/2. All 96 relaxation, perturbation-recovery and refinement trajectories pass, with equal final energies to roundoff. See the [derivation, comparison figure and reproducible checks](docs/anisotropy-six-state.md). This is a tested diagnostic boundary model; physical evidence for this edge anisotropy is still missing. The six angles describe the balanced sublattice mean, not the site-weighted mean of the unbalanced patch. Production defaults remain unchanged.
+
+**Driven follow-up:** this candidate does **not** reproduce Figures 2, 4(a), and 5 as a set. On 16-, 130- and 336-spin patches, all 24 low-field cases per size select the field-aligned 90°/270° states instead of the paper's current-dependent destinations; Fig. 4(a)'s sustained z reversal and Fig. 5(a)'s sampled transition are absent. The +1000 Oe endpoint agrees for both current signs. The 300-trajectory comparison, convergence checks, external result paths and figure locations are documented in [the switching report](docs/anisotropy-switching.md). This is an isolated diagnostic; the production model remains unchanged.
 
 The optional visualization block is disabled with `if(0)`. Enabling it requires an external `threedplott` function and a machine-specific path that are not included here. Plotting is not required for integration.
 

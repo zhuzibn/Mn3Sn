@@ -43,6 +43,17 @@ Use the fields below where useful; omit inapplicable fields:
 - **Motivation:** Signed-angle wrapping and deliberate line breaks made complete switching paths look truncated.
 - **Test Strategy:** Re-export saved trajectories with MATLAB; check plotted samples against raw angles modulo 360°, continuity, series counts and axis coverage, then inspect the PNGs. No dynamics rerun.
 
+### 2026-11-03 | Simulation results outside OneDrive
+- **Type:** change
+- **Description:** New simulation data, MATLAB logs and generated simulation figures use fresh directories under `D:\simulation_results\Mn3Sn`. The driven anisotropy diagnostic rejects new output paths inside OneDrive; unmodified production scripts require an external source copy because their save path remains fixed.
+- **Migration:** Relocated this investigation's two generated run folders after verifying every file's SHA-256. Historical reference datasets retain their existing locations.
+- **Reference:** [Unequal-anisotropy switching comparison](docs/anisotropy-switching.md).
+
+### 2026-11-03 | Relocation to D:\spin_dynamics
+- **Type:** change
+- **Description:** Move the checkout and existing local datasets to `D:\spin_dynamics\Mn3Sn`, and the two external run folders to `D:\spin_dynamics\simulation_results\Mn3Sn`. Update current output instructions and cross-drive reference links.
+- **Test Strategy:** Verify every relocated file with SHA-256 and preserve the Git branch, HEAD and pre-existing working-tree changes before updating path documentation. No numerical source changes or simulations.
+
 ---
 
 ## Section 2: Error & Solution Log
