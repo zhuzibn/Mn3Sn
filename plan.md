@@ -713,3 +713,240 @@ The native-parameter production convergence orders remain 3.8016/3.9136, and sta
 The source/display impulse checks pass across ten array sizes and both boundary flags, with 367,700 exchange/DMI operator comparisons. Browser inspection confirmed the updated 2K/mu display. Exact source comparisons preserve distrib.m, exchange masks, shifts, exchange field and DMI expressions; no spatial-weight repair was made. Independent read-only review found no blocking defect in the physics, presets, pulse indexing or chunk tests. All outputs use `.sisyphus/parameter-alignment-20261102-01/`; historical results and reference source remain protected.
 
 Final driven GPU replays passed (maximum spin discrepancy 7.38e-14), and the source/result preservation check passed for all 30 recorded paths. Whitespace checks passed for tracked diffs and new text files. No production output or historical result was overwritten; no commit or push was made.
+
+## Larger-array relaxation investigation — 2026-11-02
+
+### Goal and Success Criteria
+
+Test whether enlarging the verified three-spin reduction gives settled, locally stable undriven relaxation. This is an investigation, not authorization to repair production interactions. Require finite unit spins, a small final transverse field, a stationary tail, timestep refinement, and recovery after a small perturbation. Preserve all production source and results.
+
+### Model Classification and Equation Family
+
+Class 4 intended material-specific spatial fixed-length LLGS, with unresolved crystallographic mapping. The tests concern the implemented masked graph (Class 3 level of evidence), three easy-axis classes and one Mn moment per occupied site. Electronic structure is outside scope.
+
+### Existing Behavior and Reference Implementations
+
+Use current source, the static viewer impulse checks and production GPU replay pattern. The three-site figure evidence is already recorded above. Larger arrays have unequal reverse exchange weights and potentially non-antisymmetric DMI weights. ASTRO AGENTS/README were consulted for scope only; no ferrimagnetic parameters or topology are imported. Equation references consulted: `spintronic_methods.tex`, `sections/llg_equation.tex`, `sections/hamiltonian.tex`, and `sections/atomistic_boundaries.tex`.
+
+### State Variables, Geometry, and Boundaries
+
+| Claim / input | Evidence and implementation consequence |
+|---|---|
+| Three Mn vectors, material values | Prior reviewed evidence for [1, Sec. II], summarized above; unchanged |
+| Array sites, easy axes, neighbor reads | Execute `systemgeneration.m`, `distrib.m`, and static excerpts of `integrate_llg.m`; code evidence only |
+| Physical lattice vectors, basis, stacking, shell mapping | REFERENCE MISSING in existing audit; no new physical geometry constructed |
+| Array sizes and boundary | 2×2 control, 5×5, 5×6, 9×10, 13×14 initially; open boundaries only. Sizes count array slots, not physical nanometres |
+
+Occupied unit vectors and zero vacancies retain `(W,L)` storage. Existing periodic masks are unverified, so periodic bulk claims are excluded.
+
+### Hamiltonian
+
+For the current graph do not assume that equal physical moments admit an energy whose gradient equals the nonreciprocal field. Diagnose exchange symmetry and DMI antisymmetry explicitly. Onsite energy remains $-K\sum_i(\mathbf e_i\cdot\mathbf m_i)^2$. A conditional reciprocal comparison would use the same undirected graph with $J/2$ and signed $D/2$ on each bond: $E=\sum_{i<j}[J_{ij}\mathbf m_i\cdot\mathbf m_j-D_{ij}\hat x\cdot(\mathbf m_i\times\mathbf m_j)]-K\sum_i(\mathbf e_i\cdot\mathbf m_i)^2$. Confirm the sign against the measured DMI field before use.
+
+### Parameters and Evidence
+
+Keep native J=100.812 mu, D=0.833 meV, K=0.196 meV, mu=3 mu_B, gamma=1.760859644e11 rad/(s T), alpha=0.003. These are the already aligned reference-code values for [1]. All drives, noise, dipoles and pinning off. No change to film thickness or spatial spacing. A reciprocal comparison is a mathematical extension with bulk coordination compensation, not a newly sourced Mn3Sn bond parameterization.
+
+### Effective Fields and Units Check
+
+Measure occupied exchange and DMI matrices from actual source impulses, $B_x=-J A m_x/\mu$, $B_y=-J A m_y/\mu+D C m_z/\mu$, $B_z=-J A m_z/\mu-D C m_y/\mu$, plus $2K(\mathbf e\cdot\mathbf m)\mathbf e/\mu$. Test $A=A^T$ and $C=-C^T$. Fields are tesla. For reciprocal tests the above pair energy gives precisely these signs under $B=-\partial E/\partial m/\mu$.
+
+### Dynamical Equation and Nonconservative Torques
+
+Undriven explicit LLGS reduces to $\dot{\mathbf m}=-\gamma[\mathbf m\times\mathbf B+\alpha\mathbf m\times(\mathbf m\times\mathbf B)]/(1+\alpha^2)$, as in `eq:ll-with-flt`. No torques or stochastic terms in this investigation.
+
+### Initial Conditions, Solver, and Outputs
+
+Start with the source 121-degree ideal three-sublattice seed; additionally use reproducible small noncoplanar perturbations. Coupled RK4, unnormalized stages and final projection. Start at 5 fs, compare 2.5 fs and the default 0.5 fs where needed; initially examine 10 ps, 1 ns and 5 ns, extend if residuals require it. Save in a fresh `.sisyphus/spatial-relaxation-*` directory only. Short actual MATLAB/GPU trajectories must validate any accelerated sparse-operator replay before longer runs. Retain sampled spins, torque, norm error and source hashes.
+
+### Implementation Mapping
+
+| Stage | Diagnostic work | Verification gate |
+|---|---|---|
+| Structure/topology | Execute current setup and source impulses | Correct occupation, axes, reciprocity counts; no new geometry |
+| Fields/RHS | Sparse measured field operator, unchanged undriven LLGS | Random-state source field agreement; reciprocal energy gradient if authorized |
+| Integrator | Isolated compiled coupled-RK4 replay | Actual MATLAB/GPU trajectory error <1e-10 and vacancy/norm checks |
+| Relaxation | Size/time/seed sweep and perturbation recovery | Final max transverse field <1e-6 T; final 100 ps spin drift <1e-5; refinement <1e-5 per component, or report failure |
+| Report | Update this audit and link results from README if useful | Exact commands, measured results and evidence boundaries |
+
+These are diagnostic artifacts, not a production solver/backend. Fields consume the measured operator; the RHS consumes fields. No viewer update is needed because production topology and fields are unchanged.
+
+### Verification and Acceptance Criteria
+
+Require occupied norms within 1e-12, exact vacancies in production replays, all finite states, correctly aligned times, preprojection errors, and timestep convergence. Perturb settled spins by approximately 1e-3 rad with deterministic spatial variation, then check decay toward the same local state. Failure to settle by the chosen horizon is not proof that no equilibrium exists. Energy monotonicity is meaningful only for a verified conservative operator. Thresholds above are numerical investigation criteria, not publication tolerances.
+
+### References
+
+[1] Zhengde Xu, Xue Zhang, Yixiao Qiao, Gengchiau Liang, Shuyuan Shi, Zhifeng Zhu, Deterministic spin-orbit torque switching including the interplay between spin polarization and kagome plane in Mn3Sn, Physical Review B **109**, 134433 (2024). DOI: https://doi.org/10.1103/PhysRevB.109.134433. This task uses the existing reviewed-source evidence and verified native constants recorded above, not a fresh paper reproduction or physical-structure determination.
+
+### Assumptions, Missing References, Risks, and Approval Questions
+
+The user explicitly requested larger-size relaxation checks; isolated current-code diagnostics are authorized. Production source changes and physical topology repair are outside scope. The user explicitly approved testing both current weights and the isolated reciprocal J/2,D/2 variant. This approval covers the diagnostic comparison above, not production changes. The previous audit's missing physical construction evidence remains blocking for material-specific topology claims. No network, dependencies, reference-repository writes, commits or result overwrites.
+
+### Completed investigation
+
+Both current and reciprocal weights settle on 5×5, 5×6, 9×10, 13×14 and 21×22 open arrays (16–336 occupied spins), alongside the current-weight three-spin control. All primary 5 ns runs end below 6.31e-13 T maximum transverse field, and all settled states recover after a 1e-3 perturbation within 9.24e-13 per component after 2 ns. A larger 1e-2 perturbation of the nonequilibrium starting seed selects a different stable orientation in the current-weight 3-spin and 16-spin cases; it does not destabilize the settled equilibria.
+
+The current normalized field sums match the triangle for each easy-axis class at every site, explaining the uniform-state equivalence despite nonreciprocal pair weights. The reciprocal variant retains two half-strength bonds per other sublattice in the bulk, decreases its verified energy, and develops small edge distortions. At 100 ps sampling, the sustained 1e-6 T threshold is met by 0.9 ns for current weights and 0.6–0.8 ns for reciprocal weights. The default 10 ps example remains far from equilibrium.
+
+Actual MATLAB/GPU replays match the compiled operator diagnostic within 3.62e-16 per component over 24 fixtures. Random-state field checks, reciprocal energy derivatives, norms, vacancies, timestamp checks, 5/2.5 fs refinement over 1 ns, and 5/2.5/0.5 fs startup convergence pass. Full-length simulations use the validated diagnostic, not production GPU runs. The 56 longer trajectories and their limits are reported in [docs/spatial-relaxation.md](docs/spatial-relaxation.md), with a MATLAB-rendered plot and tracked scripts under `verification/spatial_relaxation/`. Local raw artifacts use `.sisyphus/spatial-relaxation-20261102-01/`.
+
+Production MATLAB sources are byte-identical to HEAD; no interaction repair, default change, periodic validation, physical-geometry construction, commit or push occurred. README links the evidence. No changelog entry is needed for this investigation and diagnostic-only addition.
+
+## Six-state equivalence follow-up — 2026-11-02
+
+### Goal and Success Criteria
+
+The user clarifies that correct relaxation must retain the six equivalent PRB orientations, not merely reach a small-torque state. First draw the six relaxed reference states, then compare all six starts for both current nonreciprocal and reciprocal spatial weights. Report missing destinations, orientation shifts, energy splitting (reciprocal only), and sensitivity to small perturbations without imposing a passing result.
+
+### Model Classification and Equation Family
+
+Same spatial fixed-length LLGS and three-spin control as the preceding investigation. No model or production-code changes.
+
+### Existing Behavior and Reference Implementations
+
+Reuse the verified sparse operator diagnostic and its source replays. `Mn3Sn_3atoms/FIG2_FIG4_SETTINGS.md` explicitly maps first-spin seeds to the six relaxed mean-spin angles, using phi=60-seed modulo 360 degrees. The preceding one-seed result is not evidence of six-state equivalence.
+
+### State Variables, Geometry, and Boundaries
+
+| Input | Evidence / treatment |
+|---|---|
+| Six orientations 30:60:330 degrees | Prior PRB reviewed evidence and verified reference settings; notebook transcription pp. 13–15 confirms a–f labels |
+| a,b,c ordering | Easy-axis angles 30,270,150 degrees; verified 2×2 mapping in `docs/three-spin-comparison.md` |
+| Spatial geometry / bonds | Unchanged source-derived open graphs; physical crystallographic mapping remains REFERENCE MISSING |
+| Comparison observable | Equal-weight mean of the three sublattice averages; report actual site-weighted mean separately when populations differ |
+
+### Hamiltonian
+
+Unchanged from the preceding investigation. Compare energies across six states only for the reciprocal model and the reciprocal three-spin control. A finite open patch need not preserve bulk rotational symmetry; equivalence is an outcome to test.
+
+### Parameters and Evidence
+
+Same J,D,K,mu,gamma,alpha and disabled drives/noise/dipoles. Six seeds are theta_a=60-phi modulo 360 degrees, with theta_b=theta_a+120 and theta_c=theta_a+240 degrees. Source/equation evidence is unchanged from the preceding section.
+
+### Effective Fields and Units Check
+
+Reuse verified field operators in tesla and energy derivatives. Derive sublattice averages from each site's easy-axis class, not array-position assumptions. The exact compensated seed's mean angle is undefined.
+
+### Dynamical Equation and Nonconservative Torques
+
+Unchanged explicit LLGS, zero drive; `eq:ll-with-flt` remains applicable. No new torques.
+
+### Initial Conditions, Solver, and Outputs
+
+Run the six ideal seeds and perturbed seeds with the validated coupled RK4 diagnostic, initially 5 ns at 5 fs, extending trajectories only if needed. Use the six available sizes, primarily illustrating the largest 21×22 patch. Save fresh artifacts under `.sisyphus/six-state-20261102-01/`; preserve earlier runs. Use the reference's actual relaxed arrows for six-state diagrams and plot both spatial choices from saved results with MATLAB.
+
+### Implementation Mapping
+
+| Stage | Work | Gate |
+|---|---|---|
+| Inputs | Reuse source matrices; generate six initial states | Correct a,b,c mapping, unit spins, unchanged model coefficients |
+| Reference | Six undriven triangle runs | Six angles and energy degeneracy; draw actual relaxed spins |
+| Spatial comparison | Six starts for each size and both weights | Finite/norm/torque checks; count distinct states; perturb candidate equilibria |
+| Analysis / plots | Sublattice spin vectors, angles, reciprocal energies | Preserve state labels; expose failed equivalence, undefined angles and population imbalance |
+| Documentation | Correct interpretation of prior result | Distinguish stationarity, local stability, and six-state equivalence |
+
+### Verification and Acceptance Criteria
+
+Retain the existing 1e-6 T stationarity criterion and norm/time checks. Use 0.1 degree as the reference orientation comparison threshold; report actual differences and reciprocal energy spread instead of labeling six initialized runs as six equivalent states. Perturb any exact-seed solution before calling it stable. Reuse established timestep/source verification; add refinement if new trajectories or ambiguous destinations warrant it. Inspect rendered PNGs.
+
+### References
+
+PRB 109, 134433 (2024), full reference [1] in the preceding section; use existing reviewed evidence and the exact reference settings file. The processed `_knowledge` search again found no accessible matching record. No fresh paper PDF or network source was accessed, and no new crystallographic claim is made.
+
+### Assumptions, Missing References, Risks, and Approval Questions
+
+The user's explicit follow-up authorizes these diagnostics and plots for both already approved interaction choices. No production change or further approval is required. Sixfold symmetry may be broken by finite shape, termination, sublattice counts or reciprocal edge coordination; determine the outcome rather than assume equivalence. Existing unrelated/uncommitted results from the preceding investigation are preserved.
+
+### Completed six-state comparison
+
+Executed 126 main trajectories: six triangle references plus five spatial sizes, two weight choices, six starts and ideal/1e-3 perturbed initialization. Reference angles match 30:60:330 degrees within 1.03e-10 degree; reference energy spread is 3.56e-15 meV/spin. All spatial sizes retain six distinct full-spin destinations with current weights, but only two with reciprocal weights: starts 30/90/150 end at 90 degrees, and starts 210/270/330 end at 270 degrees. Ideal/perturbed destinations agree within 2.84e-12 per component. All main runs end below 8.05e-13 T transverse field. Six extra reciprocal 336-spin refinements at 2.5 fs preserve the outcome with maximum sampled component difference 2.19e-7 over 2 ns.
+
+The actual site counts satisfy Na=Nc=N0, Nb=N0+deltaN. On an ideal planar 120-degree texture, direct onsite-energy sums give Eani=-1.5*K*N0-K*deltaN*sin(phi)^2; checked at all sizes and eight angles. This explicit twofold term favors 90/270 degrees and shows why those finite reciprocal patches do not retain sixfold equivalence. The current receiver normalization preserves the triangle field sums, but its nonreciprocal spatial Hamiltonian problem remains unresolved. Balanced sublattice mean and whole-array mean are reported separately.
+
+Saved results and reproducible MATLAB diagrams/plots are documented in `docs/six-state-relaxation.md`. Raw artifacts use `.sisyphus/six-state-20261102-01/`; scripts extend `verification/spatial_relaxation/`. README and the previous report now explicitly distinguish stationarity from the user's six-state criterion. Production source, geometry, defaults and existing results are unchanged; no changelog entry is needed for this investigation.
+
+All three plot exports completed and the PNGs were visually inspected. The final MATLAB plotting process subsequently aborted during shutdown (`std::terminate`, exit 3); the cause remains undiagnosed and is recorded in the report/log. Numerical diagnostic runs and checks passed separately. Do not describe the plotting process as a clean exit.
+
+## Coordination-weighted anisotropy trial — 2026-11-02
+
+### Goal and Success Criteria
+
+The user explicitly requests trying the proposed anisotropy correction: reciprocal J/2,D/2 bonds and K_i=K*z_i/4. Test six distinct stable destinations at 30:60:330 degrees, equal energies, perturbed-start relaxation and recovery on the same five open graphs (16–336 spins). This approval covers the isolated candidate and verification; production defaults remain unchanged.
+
+### Model Classification and Equation Family
+
+Class 3 source-derived graph with three Mn easy-axis classes, fixed-length deterministic LLGS. Its intended Mn3Sn interpretation remains Class 4 with unresolved physical geometry. Unit occupied vectors, zero vacancies and tesla fields are retained; electronic structure is outside scope.
+
+### Existing Behavior and Reference Implementations
+
+Reuse the source-validated spatial diagnostic and prior six-state dataset above. Uniform onsite K with reciprocal half-strength bonds yields only two destinations. Consulted ASTRO AGENTS/README for scope, and the equations repository AGENTS/README, `spintronic_methods.tex`, `sections/hamiltonian.tex`, `sections/llg_equation.tex` and `sections/atomistic_boundaries.tex`. Their energy derivative and explicit LLGS conventions apply; no ASTRO geometry or parameters are imported.
+
+### State Variables, Geometry, and Boundaries
+
+| Physical detail | Adopted value or rule | Builder or interaction mapping | Qualifying reference and exact locator | Evidence status |
+|---|---|---|---|---|
+| Three easy-axis classes | a,b,c axes at 30,270,150 degrees | Existing source-exported occupied-site ordering | Prior evidence for [1, Sec. II], recorded above | Unchanged reference-model mapping |
+| Sites and bonds | Existing 2×2 control and five open patches | Previously measured A,C matrices; no new geometry | Source implementation only | Code graph, not a crystal determination |
+| Physical lattice vectors, basis, stacking and shell assignment | None added | No physical builder changes | REFERENCE MISSING in existing audit | Blocks physical crystallographic claims |
+| Edge anisotropy | K_i=K*z_i/4, z_i occupied exchange neighbors | Candidate only, same neighbors and DMI signs | User-approved mathematical model; REFERENCE MISSING for real Mn3Sn edges | Test assumption, not a published boundary law |
+
+### Hamiltonian
+
+Use unique bonds:
+
+$$
+E=\sum_{i<j}\left[\frac J2\mathbf m_i\cdot\mathbf m_j-\frac D2\sigma_{ij}\hat x\cdot(\mathbf m_i\times\mathbf m_j)\right]-\sum_i\frac{Kz_i}{4}(\mathbf e_i\cdot\mathbf m_i)^2.
+$$
+
+Here sigma_ji=-sigma_ij is the measured stencil sign. Verify that every edge belongs to exactly one a,b,c triangle, every site belongs to z_i/2 triangles, and each triangle has reference DMI chirality. Then E is one half the sum of full-strength reference triangle energies: each triangle contributes K/2 per vertex, giving K*z_i/4 onsite. This is an algebraic result to check on the graph, not a sourced edge-material claim.
+
+### Parameters and Evidence
+
+Keep J=100.812*mu, D=0.833 meV, K=0.196 meV, mu=3*mu_B, gamma=1.760859644e11 rad/(s T), alpha=0.003 as in prior reference alignment [1, Sec. II and existing code comparison]. Only the candidate site anisotropy differs from the preceding reciprocal trial. No drives, thermal fields, dipoles or pinning. Degree-four sites keep K; degree-two sites have K/2. The 2×2 candidate has all energies/fields halved relative to the original triangle, so its equilibrium is unchanged but dynamics are slower.
+
+### Effective Fields and Units Check
+
+Use B_i=-(1/mu)*partial E/partial m_i. The bond fields retain measured reciprocal signs and half-strength J,D; anisotropy is (2*K*z_i/(4*mu))*(e_i dot m_i)*e_i. J,D,K are energies in joules, mu in J/T, hence B in tesla. Check random noncoplanar finite differences, triangle decomposition, equal weighted sublattice counts and six relaxed-reference transverse fields. The diagnostic model header stores 2K/mu, not K.
+
+### Dynamical Equation and Nonconservative Torques
+
+Preserve `eq:ll-with-flt` with zero torque amplitudes: dm/dt=-gamma*(m cross B+alpha*m cross (m cross B))/(1+alpha^2). No changes to the RHS or noise conventions.
+
+### Initial Conditions, Solver, and Outputs
+
+Six ideal seeds use theta_a=60-phi, theta_b=theta_a+120, theta_c=theta_a+240 degrees. Repeat with existing deterministic 1e-3 noncoplanar perturbations. Coupled RK4 at 5 fs for 5 ns with 5 ps samples; perturb relaxed states for a further 2 ns. Refine six largest-patch perturbed cases at 2.5 fs over 2 ns. Save only in a fresh `.sisyphus/anisotropy-trial-*` directory; preserve all earlier outputs and root MATLAB files. Report balanced sublattice mean and site-weighted mean separately.
+
+### Implementation Mapping
+
+| Stage | Implementation | Verification gate |
+|---|---|---|
+| Graph/topology | Reuse measured operators; enumerate triangles | Reciprocal exchange, antisymmetric DMI, correct triangle coverage and degree |
+| Energy/fields | Add diagnostic `triangle` mode; degree-weight onsite field and energy consistently | Numerical energy gradient <1e-6 T; reference torque <1e-9 T, equal reference energies <1e-10 meV/spin |
+| RHS/integrator | Unchanged coupled RK4; isolated MATLAB harness supplies Ksim array and reciprocal weights | Actual MATLAB/GPU replay <1e-10/component; finite unit spins and exact vacancies |
+| Relaxation | 60 seed runs, 30 recovery runs, six refinement runs | Six distinct destinations per size, angle error <0.1 degree, torque <1e-6 T, energy spread <1e-9 meV/spin, recovery/refinement <1e-5/component |
+| Report/figures | Reproducible MATLAB plot and report, README link | Inspect PNGs, retain evidence boundaries and actual environment/commands |
+
+Do not advance past a failed gate without diagnosis. Static fields, RHS, integration and orchestration remain separate. Existing production illustrations continue to describe unchanged production source, so no viewer refresh is needed. Independent verifier is read-only.
+
+### Verification and Acceptance Criteria
+
+Check energy decrease to roundoff, norm error <1e-12, finite states, saved-time shape/alignment, full-spin destination distinctness and preprojection error. Use a constrained triangle Hessian to supplement perturbation evidence if feasible; stationarity alone is insufficient. Source hashes must still match the measured inputs, and existing `current`/`reciprocal` modes must remain unchanged. Record omissions without claiming validation.
+
+### References
+
+[1] Zhengde Xu, Xue Zhang, Yixiao Qiao, Gengchiau Liang, Shuyuan Shi, Zhifeng Zhu, Deterministic spin-orbit torque switching including the interplay between spin polarization and kagome plane in Mn3Sn, Physical Review B **109**, 134433 (2024). DOI: https://doi.org/10.1103/PhysRevB.109.134433. Uses the prior reviewed evidence and verified reference constants above; no fresh publication extraction. The new boundary coefficient is a user-approved mathematical trial, not attributed to this paper.
+
+### Assumptions, Missing References, Risks, and Approval Questions
+
+The current request approves trying this precise coefficient rule; no repeat confirmation is required. Real-edge anisotropy and physical geometry remain REFERENCE MISSING. No periodic, driven, thermal, dipolar or domain-wall claims follow. The six angles label the balanced sublattice moment; finite population imbalance remains in the actual whole-array moment. No production promotion, network access, dependency installation, commits or result overwrites are included.
+
+### Completed candidate verification
+
+All graph and field gates passed. Every bond belongs to one identically oriented a,b,c triangle; each site belongs to z/2 triangles. The static source fields match the weighted operator within 2.85e-14 T, finite-difference energy derivatives within 4.77e-9 T, and twelve actual-source GPU fixtures within 3.07e-16/component. Both previous diagnostic modes reproduce the old executable's short outputs byte-for-byte. The six half-strength triangle constrained Hessians have minimum eigenvalue 1.32952766846e-4 T in E/mu, establishing local stability of the sum over triangles. An independent read-only review confirmed the derivation and implementation.
+
+All 96 trajectories pass: 60 primary 5 ns runs, 30 perturbed-equilibrium recovery runs and six 2.5 fs refinements. Each of the five open sizes retains all six destinations. Maximum final reference-spin discrepancy is 2.15e-12/component, sublattice spatial variation 2.90e-14, angle error below 1.8e-10 degree, energy spread 1.78e-15 meV/spin, residual torque 8.11e-13 T and norm error 2.23e-16. Recovery error is 3.49e-12; refinement error is 2.31e-7, below the 1e-5 gate. The largest preprojection norm error is 2.04e-12. Whole-array mean angles remain affected by the excess b sites.
+
+Candidate code and checks are in `verification/spatial_relaxation/`, with raw artifacts in `.sisyphus/anisotropy-trial-20261102-01/`. [The report](docs/anisotropy-six-state.md) records exact rerun commands, environment, the energy/field derivation, stability and evidence limits. MATLAB source/GPU preparation and Hessian checks exited successfully. Production MATLAB source hashes match the previous export. No changelog entry is needed for this isolated diagnostic/test addition; no production behavior or default changed.
+
+The final MATLAB comparison and spin-configuration exports also exited successfully; both PNGs were visually inspected. Plotting checks verify sample/series counts and angle transformations. New and changed text passed whitespace checks and Python syntax checks, and `git diff --check` passed. `.gitignore` already covers all generated raw artifacts and caches. Documentation updated: README, this plan, the baseline report's follow-up link and `docs/anisotropy-six-state.md`; no durable agent rules changed.

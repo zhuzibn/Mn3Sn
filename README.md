@@ -55,6 +55,10 @@ Relaxation uses the existing 5×5 array, 10 ps runtime, 0.5 fs steps and 100 fs 
 
 For three-spin outputs, compute the unnormalized mean over **occupied** sites and use `atan2d(mean_y,mean_z)`. Its angle at the exactly compensated initial state is undefined. See [parameter alignment and protocol verification](docs/reference-protocols.md) for the field convention, checks and limitations.
 
+**Larger-array relaxation check:** on open arrays with 16–336 occupied spins, the current nonreciprocal weights retain the six reference orientations, while an isolated reciprocal `J/2,D/2` bond variant reaches only two destinations (90°/270°). See the [six reference states and comparison plots](docs/six-state-relaxation.md). Excess b-sublattice sites give these finite reciprocal patches a twofold anisotropy contribution. The earlier [one-seed stationarity check](docs/spatial-relaxation.md) showed settling for both models, which is insufficient to establish six-state equivalence. The default 10 ps run is also too short for settling. Production defaults and spatial weights remain unchanged.
+
+**Coordination-weighted anisotropy trial:** keeping reciprocal `J/2,D/2` and using $K_i=Kz_i/4$ restores all six stable reference states on those same five open arrays. Four-neighbor sites retain K; two-neighbor sites use K/2. All 96 relaxation, perturbation-recovery and refinement trajectories pass, with equal final energies to roundoff. See the [derivation, comparison figure and reproducible checks](docs/anisotropy-six-state.md). This is a tested diagnostic boundary model; physical evidence for this edge anisotropy is still missing. The six angles describe the balanced sublattice mean, not the site-weighted mean of the unbalanced patch. Production defaults remain unchanged.
+
 The optional visualization block is disabled with `if(0)`. Enabling it requires an external `threedplott` function and a machine-specific path that are not included here. Plotting is not required for integration.
 
 ## Reproduction of the 2024 PRB figures
