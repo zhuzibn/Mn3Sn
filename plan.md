@@ -1071,3 +1071,107 @@ All four MATLAB PNG exports completed and were visually inspected. Plot checks p
 ### Workspace relocation — 2026-11-03
 
 The checkout and its local datasets now reside at `D:\Git_control\spin_dynamics\Mn3Sn`; the two external driven-run folders are under `D:\Git_control\spin_dynamics\simulation_results\Mn3Sn`. The workspace-level `relocation-20261103.json` records the earlier consolidation and SHA-256 verification. The [workspace README](../README.md) maps its old `D:\spin_dynamics` root to the current location. Earlier execution records and relocation manifests retain their original paths.
+
+## Nonreciprocal switching diagnostic — 2026-11-04
+
+**Scope:** the user explicitly requests testing the existing nonreciprocal method after the unequal-anisotropy failure. Reuse the implemented `current` diagnostic mode with uniform K; no new physical interaction, production modification, branch, commit or promotion is included. This section extends the same comparison and preserves the earlier plans. Diagnostic orchestration and source-replay checks are within that requested test scope.
+
+### Goal and Success Criteria
+
+Test PRB Figures 2, 4(a), and 5 [1] on the same 16-, 130- and 336-spin open graphs, against the full-strength three-spin control. Report destinations, full transient discrepancies, sampled transition, z reversal, finite-population observable differences and response to spatial perturbations. Both agreement and disagreement are valid outcomes. Publication comparison remains qualitative; quantitative tests compare the preserved, verified three-spin numerical reference, without digitizing paper curves.
+
+### Model Classification and Equation Family
+
+Class 3 existing mathematical graph with three Mn easy-axis classes and deterministic fixed-length LLGS. Class 4 crystallographic interpretation is unresolved. Each occupied site is an independently integrated unit spin, with equal moment 3 mu_B; vacancies stay zero in source replays. Electronic structure is outside scope.
+
+### Existing Behavior and Reference Implementations
+
+`spatial.cpp` already supports driven `current` weights and uniform K. Its uniform-state sublattice field sums previously matched the triangle during relaxation. Check that identity for arbitrary sublattice vectors, then test driven dynamics rather than assuming it. Reuse `driven_figures.py` preparation/execution/observables and the unchanged 48-case protocol. Extend only diagnostic selection and analysis where needed. Preserve the prior anisotropy runner's default behavior.
+
+Consulted ASTRO AGENTS/README for workflow only. Equation conventions come from `presentations/equations/spintronic_methods.tex`, `sections/material_parameters.tex` (Mn3Sn table), `sections/hamiltonian.tex` (`eq:atomistic-effective-field`), `sections/llg_equation.tex` (`eq:llg-gilbert`, `eq:ll-with-flt`), and `sections/atomistic_boundaries.tex`. No reference-repository writes or imported ferrimagnetic geometry.
+
+### State Variables, Geometry, and Boundaries
+
+| Physical detail | Adopted value or rule | Builder or interaction mapping | Qualifying reference and exact locator | Evidence status |
+|---|---|---|---|---|
+| Three reference sublattices | Existing a,b,c axes at 30,270,150 degrees in yz; polarization +x | Source-exported occupied ordering | [1, Sec. II], prior source review recorded above | Reuse established reference convention |
+| Graphs | 2x2 control; 5x5, 13x14, 21x22 open patches | Existing source-exported A,C operators | Repository code only | Existing mathematical graph, no new construction |
+| Directed weights | Original receiver weights in both exchange and DMI, uniform K | `distrib.m`, `integrate_llg.m`, `current` mode | REFERENCE MISSING for physical equal-moment nonreciprocal bonds | Explicit diagnostic of existing behavior; no physical validation claimed |
+| Lattice vectors, stacking, shell distances and shell assignment | None introduced | No builder edits | REFERENCE MISSING in earlier audit | Blocks crystallographic/finite-device claims |
+
+Existing `docs/unit-cell.html` and `docs/structure-exchange.html` already illustrate this unchanged operator. No structure or topology illustration changes are needed. Open boundaries reproduce the earlier comparison; unverified periodic masks are excluded.
+
+### Hamiltonian
+
+The onsite and Zeeman terms retain $E_{KZ}=-K\sum_i(\mathbf e_i\cdot\mathbf m_i)^2-\mu\sum_i\mathbf B_{\rm ext}\cdot\mathbf m_i$. The full directed operator is not the gradient of a usual equal-moment reciprocal pair Hamiltonian. Do not use the diagnostic's legacy `energy_over_mu_per_spin` column as a physical energy or require its monotonicity. SOT remains nonconservative. The three-spin control retains its previously verified unique-pair energy.
+
+### Parameters and Evidence
+
+Reuse [1, Sec. II and Figs. 2,4,5] as transcribed and verified in `docs/reference-protocols.md` and `docs/anisotropy-switching.md`: $J/\mu=100.812$ T (implemented 17.50806 meV, not the paper's rounded 17.53 meV), $D=0.833$ meV, $K=0.196$ meV, $\mu=3\mu_B$, $\alpha=0.003$, $\gamma=1.760859644\times10^{11}$ rad/(s T), $M_s=441850$ A/m, film thickness 30 nm, spin Hall angle 0.06. No tuning. Current magnitude 5e10 A/m2; low fields +/-100 Oe; twelve sweep values 175:25:400,450,500 Oe; high field +1000 Oe. The runtime, sampling and tolerances below are diagnostic choices inherited from the earlier controlled comparison.
+
+### Effective Fields and Units Check
+
+Using dimensionless source matrices A,C and field coefficients $J_B=J/\mu$, $D_B=D/\mu$, $K_B=2K/\mu$,
+
+$$
+\mathbf B_i=-J_B\sum_j A_{ij}\mathbf m_j+D_B\sum_j C_{ij}(0,m_{jz},-m_{jy})+K_B(\mathbf e_i\cdot\mathbf m_i)\mathbf e_i+\mathbf B_{\rm ext}.
+$$
+
+Compare this field directly against the MATLAB source on random nonuniform states, retaining both receiver masks. Check row sums separately into each sublattice against the 2x2 control; if they match, coherent sublattices form an invariant subspace under uniform inputs. This is a derivable property of the exported graph, not material evidence. Record exchange asymmetry and DMI reverse-sign defects rather than demanding reciprocity of a deliberately nonreciprocal test. Tesla inputs times gamma give inverse seconds.
+
+### Dynamical Equation and Nonconservative Torques
+
+Preserve the existing explicit LLGS:
+
+$$
+\dot{\mathbf m}_i=\frac{\gamma}{1+\alpha^2}\left[-\mathbf m_i\times\mathbf B_i-\alpha\mathbf m_i\times(\mathbf m_i\times\mathbf B_i)+B_{\rm DL}\{-\mathbf m_i\times(\mathbf m_i\times\hat x)+\alpha\mathbf m_i\times\hat x\}\right].
+$$
+
+$B_{\rm DL}=\hbar\theta_{SH}J_c/(2 e M_s t_z)$; the code's eV s hbar already cancels e numerically. Check the explicit RHS against implicit Gilbert in tesla units. No noise, dipoles, pinning, STT or field-like torque. Field and SOT gates stay constant within each RK update.
+
+### Initial Conditions, Solver, and Outputs
+
+Ideal 120-degree seeds at first-spin angles 30:60:330 degrees. Coupled RK4 with unnormalized stages and final projection, 5 fs over 5 ns; gates on during [1,4) ns. Refine eight representative protocols at 2.5 fs per size. Run deterministic site-dependent perturbations of amplitude 0.001 for four representative protocols per spatial size at both steps; this is a robustness probe, not a noise ensemble. Save means every 0.25 ps, full spins every 5 ps plus pulse-edge samples, and exact initial/final states.
+
+Save new data, logs and figures in a fresh `D:/Git_control/spin_dynamics/simulation_results/Mn3Sn/nonreciprocal-switching-20261104-*` directory. Save provenance, source/binary hashes, exact commands, update counts and environment. Report both unnormalized balanced sublattice mean and physical site mean; their difference from unequal sublattice populations must remain visible. Angle uses atan2(mean_y,mean_z), undefined below in-plane magnitude 1e-10. Use the MATLAB plotting skill for saved-result PNGs; no smoothing or normalization of the means.
+
+### Implementation Mapping
+
+| Stage | Implementation | Verification gate |
+|---|---|---|
+| 1. Existing structure | Reuse source-exported graphs; preserve source/result hashes | Occupied ordering and easy axes match MATLAB; no new physical construction |
+| 2. Existing topology | Measure directed coefficients and sublattice row sums | Match source operators; explicitly record nonreciprocity and coherent reduction |
+| 3. Fields | Select current receiver masks in diagnostic preparation | Random-state source field discrepancy <1e-11 T; no invalid energy-gradient claim |
+| 4. RHS | Unchanged kernel and torque inputs | Implicit Gilbert residual/gamma <1e-10 T; both drive signs |
+| 5. Integrator | Existing coupled RK4, source GPU replay, timestep pilots | Source replay <1e-10/component; 5/2.5 fs full-spin differences <1e-5 |
+| 6. Simulations and outputs | 48 cases per size/control; perturbation subset; compare and plot | Correct clocks, finite states, norms <1e-12; report outcomes even when physics comparison fails |
+
+Do not proceed past a failed numerical gate without diagnosing/refining it. Keep graph/field verification, RHS, integration, orchestration and analysis separate. Diagnostic changes are confined to `verification/spatial_relaxation/`; root physics and defaults remain unchanged. An independent read-only verifier will review the specification and numerical conclusions, as recommended by the spin-dynamics skill.
+
+### Verification and Acceptance Criteria
+
+Endpoint agreement: circular angle difference <0.1 degree. Record maximum transient mean-component error against the numerical reference, rather than assuming matching endpoints imply matching curves. Record Fig. 4(a)'s negative-to-positive crossing after pulse start and retained final positive z. Compare all twelve field endpoints; report only a sampled transition bracket. Analyze within-sublattice spread, edge/interior means and perturbed final-state recovery. Recompute selected means/norms from raw spins. Preserve protected results and check git diff/stat/whitespace. No full-length production GPU claim: long sweeps use the separately checked C++ replay.
+
+### References
+
+[1] Zhengde Xu, Xue Zhang, Yixiao Qiao, Gengchiau Liang, Shuyuan Shi, Zhifeng Zhu, Deterministic spin-orbit torque switching including the interplay between spin polarization and kagome plane in Mn3Sn, Physical Review B **109**, 134433 (2024). DOI: https://doi.org/10.1103/PhysRevB.109.134433. This task reuses the repository's prior reviewed-source evidence and figure protocols (Sec. II; pp. 134433-2 through -5), not a new paper reading. The active permission policy denies the papers tree, so no direct knowledge-base/PDF access is attempted and no absence of papers is inferred. The permitted presentation record `presentation-knowledge/notes/ee237/week15a-afm/slides.md` supplies context only. No network is needed for this existing-model diagnostic.
+
+### Assumptions, Missing References, Risks, and Approval Questions
+
+“Non-reciprocal exchange method” is taken to mean the repository's existing receiver-weighted exchange **and DMI** with uniform anisotropy, matching the previous `current` comparison. Testing asymmetric exchange alone while changing DMI would be a different model. The user has authorized this isolated test; no new physical model needs selection. A material change to the specification or production promotion requires review. Physical nonreciprocal bonds, crystallographic mapping and finite-device interpretation remain REFERENCE MISSING after review of the existing audit, historical note and equation/presentation context; these gaps block physical claims, not execution of the requested existing-code diagnostic. Coherent-subspace agreement alone would not establish spatial robustness. No new dependencies, network, baseline overwrites or writes to other source repositories.
+
+### Execution environment limitation
+
+The MATLAB launcher is unavailable in this execution environment. The user supplied `D:\Program Files\MATLAB\R2024b\bin`, but its WSL path is absent both inside and outside the sandbox, and Windows cmd/PowerShell are unavailable. The host PATH cannot be changed here. Continue the authorized existing-kernel diagnostic with explicit archived-fixture validation: kernel SHA-256 matches the prior driven run, production-source hashes match the exported operators, eight current-mode undriven GPU fixtures and twenty prior driven GPU fixtures are replayed. The latter comprise spatial reciprocal-candidate fixtures and the current three-spin control; they are not fresh nonreciprocal spatial GPU executions. A separate independent Python vector-identity implementation checks sixteen spatial current-mode driven short trajectories. The new MATLAB diagnostic selector and plotting function remain unexecuted unless MATLAB becomes accessible. No numerical or physical model has changed due to this execution limitation.
+
+### Completed diagnostic and verification
+
+All 248 full trajectories completed: 192 primary, 32 additional pilot refinements and 24 perturbed-start/refinement trajectories. Every spatial size matches 24/24 low-field, 12/12 field-sweep and 12/12 high-field reference destinations. Maximum primary spatial balanced-mean transient error is 7.72e-12 per component. Figure 4(a)'s balanced z reverses at 1.3990015336083 ns; the sampled field transition remains between 275 and 300 Oe. The largest endpoint error is 6.63e-7 degrees. An independent verifier recomputed all 216 sweep endpoints from raw final spins and all twelve perturbed refinement/recovery pairs.
+
+The coherent reduction follows exact per-sublattice row sums at every site. Uniform-start spread stays below 3.03e-14. All perturbed starts recover the unperturbed final state within 7.64e-14; their maximum 5/2.5 fs full-spin discrepancy is 1.92e-7, below the 1e-5 gate. Pilot refinement error is 1.54e-8. Maximum postprojection norm error is 2.23e-16, sweep preprojection error 1.16e-12 and sampled mean reconciliation error 1.37e-15. Eight archived undriven, twenty archived driven and sixteen independent short CPU checks pass. Protected source/result hashes match.
+
+Raw finite-patch magnetization is not paper-equivalent: for Fig. 4(a), site z reverses from positive to negative, dominated by the excess-b contribution, while balanced z reverses from negative to positive. Numerical coherent agreement therefore does not resolve A02 or physical topology. The full evidence, commands, limitations and external data path are in [docs/nonreciprocal-switching.md](docs/nonreciprocal-switching.md).
+
+The user supplied the MATLAB registration README in chat. Its WSL wrapper/PATH procedure was attempted, but writes to `~/.local/bin/matlab` and `~/.bashrc` were absent in the next tool session; same-process launch failed because the executable path was unavailable. Persistent registration is not claimed. The external run folder contains `register-matlab.sh` for execution in local WSL; it passed `bash -n`. The MATLAB selector and plotting source are delivered but remain unexecuted/unrendered. No substitute plotting backend was used.
+
+Documentation updated: README, this plan and the new report. Existing schematic/interaction viewers still describe the unchanged operator. No AGENTS or changelog update is needed for this diagnostic-only addition; production behavior and defaults are unchanged. No new dependencies, network, source-repository side effects, commits or pushes.

@@ -1,6 +1,8 @@
-function prepare_driven(source,out)
+function prepare_driven(source,out,comparison)
 % Actual-source fields, Gilbert identity and pulse-edge GPU fixtures.
 % Run driven_figures.py prepare first; never calls main.m or saves root results.
+if nargin<3,comparison='triangle';end
+assert(any(strcmp(comparison,{'triangle','current'})));
 root=pwd;addpath(root);constantfile;dev=gpuDevice(1);src=fileread('integrate_llg.m');
 assert(~isfile(fullfile(out,'gpu-gates.json')),'Use a fresh output directory.');
 writejson(fullfile(out,'environment.json'),struct('matlab',version,'gpu',dev.Name,'toolboxes',{ver}));
@@ -9,9 +11,10 @@ for q=1:numel(tags)
  tag=tags{q};dims=sscanf(tag,'%dx%d');natomW=dims(1);natomL=dims(2);natom=natomW*natomL;
  dwcalc=0;load_fixed_atom_distrib=0;save_fixed_atom_distrib=0;initial_theta_deg=210;
  systemgeneration;occ=find(atomtype_==1);N=numel(occ);bc=1;
+ source_hex=hex_constant;source_dmi=hdmi_constant;
  data=load(fullfile(source,[tag '-static.mat']));
  axes=[coeffs_1(occ) coeffs_2(occ) coeffs_3(occ)];assert(isequal(occ,data.occ) && isequal(axes,data.axes));
- modes={'triangle'};if N==3,modes{end+1}='current';end
+ modes={comparison};if strcmp(comparison,'triangle') && N==3,modes{end+1}='current';end
  for modeindex=1:numel(modes)
   mode=modes{modeindex};A=.5*(data.A~=0);C=.5*sign(data.C);degree=sum(A~=0,2);
   assert(isequal(A,A') && isequal(C,-C') && all(degree==2 | degree==4));
@@ -19,7 +22,7 @@ for q=1:numel(tags)
   Ksim=zeros(natomW,natomL);Ksim(occ)=.196e-3*ele*degree/4;
   hex_constant(:)=.5;hdmi_constant(:)=.5;
   if strcmp(mode,'current')
-   A=data.A;C=data.C;Ksim(occ)=.196e-3*ele;hex_constant(:)=1;hdmi_constant(:)=1;
+   A=data.A;C=data.C;Ksim(occ)=.196e-3*ele;hex_constant=source_hex;hdmi_constant=source_dmi;
   end
   rng(20261103);r=randn(N,3);r=r./vecnorm(r,2,2);
   names={'nextL','previousL','nextW','previousW','previousWleft','previousWright','nextWleft','nextWright'};
