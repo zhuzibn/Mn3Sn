@@ -54,6 +54,11 @@ Use the fields below where useful; omit inapplicable fields:
 - **Description:** Move the checkout and existing local datasets to `D:\spin_dynamics\Mn3Sn`, and the two external run folders to `D:\spin_dynamics\simulation_results\Mn3Sn`. Update current output instructions and cross-drive reference links.
 - **Test Strategy:** Verify every relocated file with SHA-256 and preserve the Git branch, HEAD and pre-existing working-tree changes before updating path documentation. No numerical source changes or simulations.
 
+### 2026-11-03 | Relocation into Git_control
+- **Type:** change
+- **Description:** Move the checkout to `D:\Git_control\spin_dynamics\Mn3Sn` and its external results under `D:\Git_control\spin_dynamics\simulation_results\Mn3Sn`. Update current output instructions and reproduction commands; retain historical provenance paths.
+- **Test Strategy:** Compare branch, HEAD, status and binary diffs with the pre-move snapshot before path edits; check documentation diffs. No numerical source changes or simulations.
+
 ---
 
 ## Section 2: Error & Solution Log

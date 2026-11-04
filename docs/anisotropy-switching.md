@@ -98,11 +98,11 @@ No parameter tuning, noise model, physical geometry repair or production promoti
 At the user's request, new run data, MATLAB logs and generated figures are stored **outside OneDrive**:
 
 ```text
-D:\spin_dynamics\simulation_results\Mn3Sn\unequal-anisotropy-switching-20261103-02
-/mnt/d/spin_dynamics/simulation_results/Mn3Sn/unequal-anisotropy-switching-20261103-02
+D:\Git_control\spin_dynamics\simulation_results\Mn3Sn\unequal-anisotropy-switching-20261103-02
+/mnt/d/Git_control/spin_dynamics/simulation_results/Mn3Sn/unequal-anisotropy-switching-20261103-02
 ```
 
-Each run's `relocation.json` records its earlier move out of OneDrive. The workspace-level `D:\spin_dynamics\relocation-20261103.json` records the subsequent project/result relocation and SHA-256 hashes. Historical reference datasets remain at their recorded paths. The preliminary `-01` setup-only folder was also relocated. Original command records retain the paths actually used when the computations ran.
+Each run's `relocation.json` records its earlier move out of OneDrive. The workspace-level `D:\Git_control\spin_dynamics\relocation-20261103.json` records the earlier project/result consolidation and SHA-256 hashes. The [workspace README](../../README.md) maps those recorded paths to the current root after the later move into `D:\Git_control\spin_dynamics`. Historical reference datasets remain at their recorded paths. The preliminary `-01` setup-only folder was also relocated. Original command records retain the paths actually used when the computations ran.
 
 | External file | Content |
 |---|---|
@@ -126,16 +126,16 @@ All four PNG exports were visually inspected. `plot-checks.json` confirms 163 pl
 Run from the repository root. The prepared source matrices and reference results are the existing datasets documented in [the spatial relaxation report](spatial-relaxation.md), [six-state report](anisotropy-six-state.md), and [reference-protocol report](reference-protocols.md). Use a fresh external output directory. The new runner rejects output paths inside OneDrive.
 
 ```bash
-python3 verification/spatial_relaxation/driven_figures.py /mnt/d/spin_dynamics/simulation_results/Mn3Sn/unequal-anisotropy-new prepare
-matlab -wait -batch "addpath('verification/spatial_relaxation'); prepare_driven('.sisyphus/spatial-relaxation-20261102-01','D:/spin_dynamics/simulation_results/Mn3Sn/unequal-anisotropy-new')"
-python3 verification/spatial_relaxation/driven_figures.py /mnt/d/spin_dynamics/simulation_results/Mn3Sn/unequal-anisotropy-new check
-python3 verification/spatial_relaxation/driven_figures.py /mnt/d/spin_dynamics/simulation_results/Mn3Sn/unequal-anisotropy-new pilot
-python3 verification/spatial_relaxation/driven_figures.py /mnt/d/spin_dynamics/simulation_results/Mn3Sn/unequal-anisotropy-new pilot-check
-python3 verification/spatial_relaxation/driven_figures.py /mnt/d/spin_dynamics/simulation_results/Mn3Sn/unequal-anisotropy-new sweep
-python3 verification/spatial_relaxation/driven_figures.py /mnt/d/spin_dynamics/simulation_results/Mn3Sn/unequal-anisotropy-new transition
-python3 verification/spatial_relaxation/driven_figures.py /mnt/d/spin_dynamics/simulation_results/Mn3Sn/unequal-anisotropy-new analyze
-matlab -wait -batch "addpath('verification/spatial_relaxation'); out='D:/spin_dynamics/simulation_results/Mn3Sn/unequal-anisotropy-new'; mkdir(fullfile(out,'figures')); plot_driven(out,fullfile(out,'figures'))"
-python3 verification/spatial_relaxation/driven_figures.py /mnt/d/spin_dynamics/simulation_results/Mn3Sn/unequal-anisotropy-new preserve
+python3 verification/spatial_relaxation/driven_figures.py /mnt/d/Git_control/spin_dynamics/simulation_results/Mn3Sn/unequal-anisotropy-new prepare
+matlab -wait -batch "addpath('verification/spatial_relaxation'); prepare_driven('.sisyphus/spatial-relaxation-20261102-01','D:/Git_control/spin_dynamics/simulation_results/Mn3Sn/unequal-anisotropy-new')"
+python3 verification/spatial_relaxation/driven_figures.py /mnt/d/Git_control/spin_dynamics/simulation_results/Mn3Sn/unequal-anisotropy-new check
+python3 verification/spatial_relaxation/driven_figures.py /mnt/d/Git_control/spin_dynamics/simulation_results/Mn3Sn/unequal-anisotropy-new pilot
+python3 verification/spatial_relaxation/driven_figures.py /mnt/d/Git_control/spin_dynamics/simulation_results/Mn3Sn/unequal-anisotropy-new pilot-check
+python3 verification/spatial_relaxation/driven_figures.py /mnt/d/Git_control/spin_dynamics/simulation_results/Mn3Sn/unequal-anisotropy-new sweep
+python3 verification/spatial_relaxation/driven_figures.py /mnt/d/Git_control/spin_dynamics/simulation_results/Mn3Sn/unequal-anisotropy-new transition
+python3 verification/spatial_relaxation/driven_figures.py /mnt/d/Git_control/spin_dynamics/simulation_results/Mn3Sn/unequal-anisotropy-new analyze
+matlab -wait -batch "addpath('verification/spatial_relaxation'); out='D:/Git_control/spin_dynamics/simulation_results/Mn3Sn/unequal-anisotropy-new'; mkdir(fullfile(out,'figures')); plot_driven(out,fullfile(out,'figures'))"
+python3 verification/spatial_relaxation/driven_figures.py /mnt/d/Git_control/spin_dynamics/simulation_results/Mn3Sn/unequal-anisotropy-new preserve
 ```
 
 Environment: MATLAB R2024b Update 1, NVIDIA GeForce RTX 3060 Laptop GPU, GNU C++ and standard-library Python; exact versions and commands are in the external artifacts. No dependencies were installed. The MATLAB metadata-aggregation issue was fixed and all fixtures rerun; a plotting legend-format error was corrected before successful export. Neither issue changed the physical simulation.

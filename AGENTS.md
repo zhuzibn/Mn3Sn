@@ -54,7 +54,7 @@ Treat thermal noise, dipole modes 1–3, fixed edges, loaded distributions, `loa
 
 ## Validation and result protection
 
-- Save new simulation data, MATLAB logs and generated simulation figures outside OneDrive. Default to `D:\spin_dynamics\simulation_results\Mn3Sn` (`/mnt/d/spin_dynamics/simulation_results/Mn3Sn` in WSL), with a fresh directory per run. Keep source and written reports in this repository. For unmodified `main.m`, use an isolated source copy in the external run directory because its save path is fixed. Preserve historical datasets unless their relocation is explicitly requested.
+- Save new simulation data, MATLAB logs and generated simulation figures outside OneDrive. Default to `D:\Git_control\spin_dynamics\simulation_results\Mn3Sn` (`/mnt/d/Git_control/spin_dynamics/simulation_results/Mn3Sn` in WSL), with a fresh directory per run. Keep source and written reports in this repository. For unmodified `main.m`, use an isolated source copy in the external run directory because its save path is fixed. Preserve historical datasets unless their relocation is explicitly requested.
 - Use the narrowest checks appropriate to the requested work; there is no accepted local regression baseline yet.
 - Preserve historical results before establishing a baseline. A record of legacy behavior is not proof of physical correctness.
 - Candidate runs must avoid overwriting `finalnew.mat`, `atomtypee.mat`, and external result files. The current script has no built-in safe output selection, so use an explicitly reviewed temporary harness or isolated copy for audit runs.

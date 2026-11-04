@@ -1,6 +1,6 @@
 # Mn3Sn spin dynamics
 
-Local checkout: `D:\spin_dynamics\Mn3Sn` (`/mnt/d/spin_dynamics/Mn3Sn` in WSL).
+Local checkout: `D:\Git_control\spin_dynamics\Mn3Sn` (`/mnt/d/Git_control/spin_dynamics/Mn3Sn` in WSL).
 Existing local data retain their paths relative to this checkout.
 
 MATLAB code for a two-dimensional, spatially resolved classical-spin model of Mn$_3$Sn, associated with the three publications listed below. The repository constructs a masked kagome-like array and integrates fixed-length LLGS dynamics using an NVIDIA GPU.
@@ -36,7 +36,7 @@ matlab -batch "run('main.m')"
 
 **Output:** `main.m` saves the entire workspace into `finalnew.mat` in the current directory, overwriting a file of that name. Preserve existing results before running. There is no implemented output-path option or restart reader. Select a protocol inside `main.m`; setting workspace variables before running it does not override its defaults.
 
-Save new simulation results, MATLAB logs and generated simulation figures outside OneDrive, under a fresh directory in `D:\spin_dynamics\simulation_results\Mn3Sn` (WSL: `/mnt/d/spin_dynamics/simulation_results/Mn3Sn`). For `main.m`, copy the root `.m` files into that external directory and run from the copy. Verification harnesses with explicit output arguments should receive the external path. Historical datasets are retained at their recorded locations.
+Save new simulation results, MATLAB logs and generated simulation figures outside OneDrive, under a fresh directory in `D:\Git_control\spin_dynamics\simulation_results\Mn3Sn` (WSL: `/mnt/d/Git_control/spin_dynamics/simulation_results/Mn3Sn`). For `main.m`, copy the root `.m` files into that external directory and run from the copy. Verification harnesses with explicit output arguments should receive the external path. Historical datasets are retained at their recorded locations.
 
 ## Relaxation and paper protocols
 
