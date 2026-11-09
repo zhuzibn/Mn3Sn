@@ -1175,3 +1175,256 @@ Raw finite-patch magnetization is not paper-equivalent: for Fig. 4(a), site z re
 The user supplied the MATLAB registration README in chat. Its WSL wrapper/PATH procedure was attempted, but writes to `~/.local/bin/matlab` and `~/.bashrc` were absent in the next tool session; same-process launch failed because the executable path was unavailable. Persistent registration is not claimed. The external run folder contains `register-matlab.sh` for execution in local WSL; it passed `bash -n`. The MATLAB selector and plotting source are delivered but remain unexecuted/unrendered. No substitute plotting backend was used.
 
 Documentation updated: README, this plan and the new report. Existing schematic/interaction viewers still describe the unchanged operator. No AGENTS or changelog update is needed for this diagnostic-only addition; production behavior and defaults are unchanged. No new dependencies, network, source-repository side effects, commits or pushes.
+
+## Proposed periodic six-state relaxation test — 2026-11-09
+
+Status: user explicitly approved this section on 2026-11-09; all 78 trajectories and numerical gates passed. This extends the preceding relaxation investigations without replacing their plans or results. The initial working tree was clean on `main`.
+
+### Goal and Success Criteria
+
+Test the user's hypothesis that periodic boundaries restore six stable states for the **reciprocal J/2,D/2 model with uniform K**. This isolates the boundary question raised by the two-destination open-patch result in [the six-state report](docs/six-state-relaxation.md). Test independently evolving spatial spins, including nonuniform perturbations; coherent three-spin agreement alone is insufficient. Report a negative or inconclusive outcome if the checks fail. Production defaults, physical parameter fitting, driven switching, finite-device predictions and exhaustive metastable-state enumeration are outside this test.
+
+### Model Classification and Equation Family
+
+Class 3: a periodic mathematical continuation of the existing three-class array stencil, using deterministic fixed-length LLG (the zero-drive limit of the existing LLGS). Each occupied site has its own unit vector and equal moment; empty array entries stay exactly zero. The three easy-axis classes represent the existing noncollinear antiferromagnetic order. This test does not establish a Class 4 crystallographic model or electronic/Hall observables. The local synthesis [P1, Scope and evidence base; Shared mechanism] supports the distinction between three-sublattice switching and spatial modeling, not the proposed spatial bond construction.
+
+### Existing Behavior and Reference Implementations
+
+Source inspection identifies why simply setting `bc=0` is inadequate:
+
+- `distrib.m` removes occupied entries in the final column to terminate triangles, independently of `bc`.
+- `integrate_llg.m` zeros exchange coefficient masks on array edges before testing `bc`. Switching off the later spin-shift truncation does not restore those bonds.
+- DMI uses a different mask path, including `hdmi_constant1(1:4:natomW,end)=0`; removing shift truncation can therefore wrap DMI without the corresponding exchange bond.
+- Receiver weights still vary at edges. The 5x5 default is not a whole number of the four-row/two-column interior repeats.
+
+Reuse the existing diagnostic `spatial.cpp`, full-spin binary output and six-state analysis conventions. Preserve `current`, `reciprocal` and `triangle` behavior for archived models. Consulted ASTRO `AGENTS.md` and `README.md` for workflow only; no Gd-FeCo lattice, parameters or DMI geometry are imported.
+
+Equation context inspected: `presentations/equations/spintronic_methods.tex`, `sections/material_parameters.tex` (Mn3Sn table), `sections/hamiltonian.tex` (`eq:atomistic-hamiltonian`, `eq:atomistic-effective-field`), `sections/llg_equation.tex` (`eq:llg-gilbert`, `eq:ll-with-flt`) and `sections/atomistic_boundaries.tex` (`eq:atomistic-boundary-workflow`). These establish conventions, not new structural evidence.
+
+### State Variables, Geometry, and Boundaries
+
+Use periodicity in both array directions, with W divisible by four and L even. Omit only the terminal-edge deletions from the existing repeating occupation pattern. Static tests use 4x4; trajectories use 8x8, 12x12 and 20x20 arrays (48, 108 and 300 occupied sites, respectively). The expected population of each class is WL/4. These dimensions and counts are derived from the code's interior parity pattern, not physical lattice constants. Neighbor image offsets and directed bond multiplicities must be retained and checked explicitly.
+
+| Physical detail | Adopted value or rule | Builder or interaction mapping | Qualifying reference and exact locator | Evidence status |
+|---|---|---|---|---|
+| Model scope and six-state reference | Three noncollinear classes; six reference orientations | Existing a,b,c labels and reference outputs | [P1, Shared mechanism; From ideal configuration II]; [P2, slide 25] cites [1] | Qualifying local context; numerical target taken from the earlier verified control |
+| Array bookkeeping and continuation | Four-row/two-column interior motif, wrapped in both index directions | Source parity rules; omit terminal-column removals and exchange edge cuts in an isolated diagnostic | Current `distrib.m` and `integrate_llg.m`; no qualifying crystal mapping | Explicit mathematical test assumption; **REFERENCE MISSING** for identification with physical Mn3Sn periodic registry |
+| Bond set and normalization | Four incident neighbors per occupied site, two of each other class; reciprocal J/2 and antisymmetric signed D/2 | Periodic continuation of the source interior stencil; identical seam/interior coefficients | Derived code-graph hypothesis, to be verified; not supplied by [1] | **REFERENCE MISSING** for physical shell assignment; diagnostic continuation only |
+| Anisotropy and class map | Uniform K; easy axes 30,270,150 degrees in yz for a,b,c | Existing `coeffs_*` parity mapping | Earlier paper/source reconciliation in this plan and `docs/reference-protocols.md` | Unchanged implementation convention; physical code-to-crystal labels remain **REFERENCE MISSING** |
+| Lattice vectors, metric basis, stacking, shell distances | None introduced | No crystallographic builder or physical coordinates | Not established by inspected local material | **REFERENCE MISSING**; blocks physical structure and finite-device claims |
+
+The approved scope must remain a diagnostic of the existing mathematical stencil. User approval does not supply missing physical structural evidence. Do not invent lattice coordinates or use the legacy 0.4 nm spacing to assign a physical size. No change to open or mixed production boundaries is included.
+
+### Hamiltonian
+
+For the reciprocal candidate, let dimensionless A be symmetric, with A_ij=1/2 on a directed nearest stencil bond, and C be antisymmetric, with C_ij=+/-1/2 following the existing interior DMI signs. All bonds, including periodic images, are counted with their multiplicity. With both ordered directions included,
+
+$$
+E=\frac{J}{2}\sum_{ij}A_{ij}\mathbf m_i\cdot\mathbf m_j
+-\frac{D}{2}\sum_{ij}C_{ij}\hat{\mathbf x}\cdot(\mathbf m_i\times\mathbf m_j)
+-K\sum_i(\mathbf e_i\cdot\mathbf m_i)^2.
+$$
+
+Positive J is antiferromagnetic. The outer factors of 1/2 remove double counting; they are separate from the explicitly chosen J/2,D/2 bond strength. This is the declared mathematical energy of the reciprocal diagnostic, not a newly validated material Hamiltonian. Equal populations remove the previously derived excess-b term from the ideal-texture anisotropy sum. That observation motivates the test; it is not a stability result for canted or spatially perturbed states.
+
+### Parameters and Evidence
+
+Retain the native values previously checked against the three-spin reference: J/mu=100.812 T (J=17.50806 meV using the repository constants), D=0.833 meV, K=0.196 meV, mu=3 mu_B, alpha=0.003 and gamma=1.760859644e11 rad/(s T). The historical source review maps D,K,mu,alpha and the rounded published J=17.53 meV to [1, Sec. II]; the implemented J and gamma remain exact numerical control choices. Physical normalization of spatial J/2,D/2 remains **REFERENCE MISSING**, as above. Do not tune parameters to obtain six states or add coordination-dependent anisotropy. Field, current, noise, dipoles, pinning, STT and SOT are zero; thickness and magnetization-density torque factors are therefore not applicable.
+
+### Effective Fields and Units Check
+
+Using B_i=-(1/mu) partial E/partial m_i gives
+
+$$
+\mathbf B_i=-\frac{J}{\mu}\sum_j A_{ij}\mathbf m_j
++\frac{D}{\mu}\sum_j C_{ij}(0,m_{jz},-m_{jy})
++\frac{2K}{\mu}(\mathbf e_i\cdot\mathbf m_i)\mathbf e_i.
+$$
+
+Energy in J divided by moment in J/T gives tesla. Each ordered pair's two derivatives cancel the outer energy factor of 1/2. Verify exchange, DMI and anisotropy derivatives separately, including seam sites. Compare the exported matrix field with a direct wrapped-stencil evaluation on deterministic nonuniform states. Each site's sum into either other sublattice should equal the full-strength triangle coupling; test this identity without imposing coherent dynamics on the spatial runs.
+
+### Dynamical Equation and Nonconservative Torques
+
+Retain the existing explicit zero-drive equation, consistent with `eq:ll-with-flt`:
+
+$$
+\dot{\mathbf m}_i=-\frac{\gamma}{1+\alpha^2}
+\left[\mathbf m_i\times\mathbf B_i+\alpha\mathbf m_i\times(\mathbf m_i\times\mathbf B_i)\right].
+$$
+
+No nonconservative torque or stochastic term is enabled. No change to the shared LLGS kernel or its damping-dependent torque cross terms is needed. Fields enter in tesla, giving inverse seconds after multiplication by gamma.
+
+### Initial Conditions, Solver, and Outputs
+
+Use the earlier six ideal seeds: target mean labels phi=30:60:330 degrees, first-spin angle theta_a=60-phi modulo 360, then theta_b=theta_a+120 and theta_c=theta_a+240 degrees. Exact ideal compensation makes the initial mean angle undefined. Easy axes remain the original class axes. Integrate coupled RK4 with unnormalized stages and projection only after combining stages.
+
+Primary runs: six seeds on each size, both ideal and with the existing deterministic site-dependent perturbation of amplitude 0.001, for 5 ns at 5 fs. Run six three-spin controls. Restart every periodic relaxed state with a 0.001 perturbation for 2 ns to check recovery. On the largest cell, also start at +/-5 degrees from each ideal orientation and refine the six perturbed primary trajectories at 2.5 fs over the same 5 ns. Record full spins every 5 ps, including t=0 and the exact final state. These times, perturbations and tolerances are diagnostic choices rather than additional published claims.
+
+Record site means, separate sublattice means, balanced means, within-class spread, maximum transverse field, energy per spin, occupied norms, preprojection error and clocks. With equal populations, site and balanced means must agree. Angle is atan2(mean_y,mean_z), omitted when the in-plane mean is below 1e-10. Compare entire final configurations, not angles alone.
+
+Use a fresh directory under `D:/Git_control/spin_dynamics/simulation_results/Mn3Sn/periodic-six-state-20261109-*` for models, trajectories, MATLAB files, plots, logs and provenance. Record exact commands, source hashes, environment and all overrides. Preserve historical results and root `finalnew.mat`/`atomtypee.mat`.
+
+MATLAB preflight executed from `/tmp`: `matlab -batch "disp(version); g=gpuDevice(1); disp(g.Name); disp(g.ComputeCapability);"`. It reports R2024b Update 1 and NVIDIA GeForce RTX 3060 Laptop GPU, compute capability 8.6. Thus fresh MATLAB/GPU checks are feasible; the earlier environment limitation is historical. Long sweeps may use the existing C++ diagnostic only after fresh periodic MATLAB replay checks pass.
+
+### Implementation Mapping
+
+Keep all diagnostic code under `verification/spatial_relaxation/`. Add focused periodic preparation, sweep/analysis and MATLAB plotting entry points; reuse the unchanged dynamics kernel. Do not patch root production physics files or silently alter old diagnostic inputs. Structure/bond data feed field evaluation; the RHS consumes verified fields, and the integrator and run orchestration remain separate.
+
+| Stage | Implementation | Verification gate |
+|---|---|---|
+| 1. Structure | Isolated interior-pattern repetition; schematic periodic view | Exact WL/4 class populations, occupied/empty mapping and translation under motif repeats |
+| 2. Topology | Wrapped bond table with image offsets; interaction view of seams | Four neighbors/site, two/other class; symmetric A, antisymmetric C, matching exchange/DMI support; no unintended self/duplicate bonds; correct multiplicities |
+| 3. Fields and energy | Periodic source-stencil replay and independent pair energy | Direct/matrix fields differ by <1e-11 T; termwise central-difference gradient error <1e-6 T; translation and energy-per-cell invariance |
+| 4. RHS | Existing deterministic explicit LLGS with zero torques | Implicit Gilbert residual divided by gamma <1e-10 T on normalized nonuniform states |
+| 5. Integrator | Short fresh MATLAB/GPU replay, unchanged C++ kernel and refinement | Replay error <1e-10/component; largest-cell 5/2.5 fs common-time error <1e-5/component |
+| 6. Relaxation and outputs | Primary, perturbed, offset and recovery runs; saved-result plots | Apply the stability and degeneracy criteria below; report failures and nonconvergence explicitly |
+
+Do not proceed past a failed gate without diagnosing it. For this topology extension, provide periodic cell/seam illustrations sourced from the verified diagnostic bond table, as a clearly labeled diagnostic mode in the existing `docs/unit-cell.html` / `docs/structure-exchange.html` views or one linked companion providing both views. Existing production displays must retain their meaning. Browser checks must reconcile selected sites, seam bonds, repetition and counts with the same verified data. Arbitrary display positions remain schematic. Use the MATLAB plotting skill for scientific trajectory and final-state plots. An independent read-only verifier should inspect the approved topology and conclusions; no concurrent source edits or new worktree are required.
+
+### Verification and Acceptance Criteria
+
+Numerical gates use the preceding diagnostic tolerances. Require finite occupied spins, maximum projected norm error <1e-12, exact-zero empty entries in MATLAB replays, correct update/sample counts and a terminal transverse field <1e-7 T. Check sampled energy is nonincreasing within numerical roundoff (allowed rise 1e-9 meV/spin), and report the maximum preprojection norm error.
+
+For each size, count distinct whole-spin destinations using a 1e-6 maximum-component clustering tolerance. Six-state success requires all six reference directions within 0.1 degree, pairwise distinct full configurations, and perturbed/restarted final configurations agreeing with their unperturbed counterparts within 1e-6/component. The +/-5-degree starts must return to their corresponding state. Require final energy spread <1e-9 meV/spin before calling the six states degenerate. Inspect within-class spread instead of assuming spatial coherence. Refinement must preserve the classifications and meet the trajectory tolerance. These tests establish local numerical attraction in the tested cells; they do not prove an exhaustive list of stable textures or finite-temperature retention.
+
+Document exact runnable commands after implementation, including failed checks. Update README with the result and link a focused `docs/periodic-six-state.md` report. Update CHANGELOG only if the delivered diagnostic changes documented user-facing behavior under the repository convention. Finish with protected-file hashes, `git diff --stat`, `git diff --check` and review of untracked files.
+
+### References
+
+Reference [1] is the full Xu, Zhang, Qiao, Liang, Shi and Zhu PRB **109**, 134433 (2024) entry in the root References section above. Its earlier PDF-backed parameter review is reused as historical evidence, not claimed as a fresh source-PDF reading.
+
+[P1] Local synthesized record: `/mnt/c/Users/zzf-m/OneDrive/papers/_knowledge/topics/mn3sn-spin-orbit-torque-switching.md`, read completely for this investigation; relevant sections identified above. `papers.jsonl` and `paper-catalog.md` resolve [1] and the domain-wall paper. Their individual summary/Markdown/PDF pointers lead outside `_knowledge` into `papers/AFM`, so those files were not opened under the present read scope. This limits new structural verification; it does not imply the papers are absent.
+
+[P2] Local presentation record: `/mnt/c/Users/zzf-m/OneDrive/presentation-knowledge/notes/ee237/week15a-afm/slides.md`, slides 25–27, read for Mn3Sn scope and references. Slide 25 cites [1]; these slides do not supply a numerical periodic lattice, basis or bond table.
+
+### Assumptions, Missing References, Risks, and Approval Questions
+
+The proposed interpretation is reciprocal J/2,D/2 with uniform K, because the prior open-boundary test lost four of six destinations for that model. Reusing receiver-dependent weights or Kz_i/4 would confound the boundary comparison. The physical stencil, spatial normalization and crystallographic registry gaps remain **REFERENCE MISSING** after checking the active audit, local KB catalog/synthesis, presentation record and equation context. No online search, dependency installation or out-of-scope paper read was performed. Restricting this work to a declared mathematical continuation permits the numerical diagnostic; physical-model promotion remains blocked pending qualifying evidence.
+
+Approved decisions: the user approved this isolated periodic diagnostic, its reciprocal coefficients and uniform K, periodic array sizes and stability checks. Production promotion and physical crystallographic interpretation remain outside the approval.
+
+### Completed periodic diagnostic and verification
+
+Implemented the isolated in-memory source preparation, standard-library Python orchestration/analysis, saved-data MATLAB plots and a [periodic cell/bond companion](docs/periodic-cell.html). Root production `.m` files and protected results retain their pre-run SHA-256 hashes. The external result directory is `D:/Git_control/spin_dynamics/simulation_results/Mn3Sn/periodic-six-state-20261109-01`; exact commands, input models, patched source text, original run-source snapshots and analysis hashes are preserved there.
+
+Structure/topology checks pass on 4x4, 8x8, 12x12 and 20x20 cells: equal class populations, four distinct neighbors per site, two neighbors in each other class, reciprocal exchange and antisymmetric DMI at every seam. Independent enumeration agrees with the MATLAB impulse exports. Translation and repeated-cell energy checks pass. Maximum field discrepancy is 5.69e-14 T, termwise gradient error 1.59e-8 T, implicit-Gilbert residual/gamma 3.36e-14 T and repeated-cell energy discrepancy 4.80e-14 T/spin. All ten fresh MATLAB/GPU fixtures match the unchanged C++ kernel within 2.23e-16/component, including two-chunk clocks and exactly zero empty slots.
+
+All 78 trajectories pass: 36 periodic primary runs, six three-spin controls, six largest-cell refinements, 18 perturbed restarts and twelve +/-5-degree offset runs. Each spatial size has six distinct full-spin destinations at 30:60:330 degrees. Final energy is -9.573769075686 meV/spin, with scalar-accumulation spread below 5.16e-14 meV/spin. Maximum final transverse field is 1.03e-12 T, projected norm error 3.34e-16, preprojection norm error 1.15e-12, full-spin recovery discrepancy 2.79e-12/component and common-time refinement discrepancy 1.38e-7/component. Final within-class spread is below 2.86e-14.
+
+The independent read-only verifier recomputed all endpoint angles, fields, torques, unique-bond energies, configuration clusters and recovery comparisons, and checked all 67,278 saved configurations (11,998,026 spin vectors), exact initial states, sample clocks, file shapes and source hashes. Accurate unique-bond summation gives six-state energy spread at most 3.56e-15 meV/spin. Independently recomputed maximum angle error is 2.29e-10 degrees. Intermediate energy monotonicity uses saved scalar energies; preprojection errors are integrator-recorded quantities. These are explicit limits of that independent audit.
+
+An initial postprocessing check failed on floating-point final time 5000.000000000001 ps versus 5000 ps. Replaced exact floating equality with a 1e-9 ps tolerance while retaining exact integer update counts; the largest observed clock residual is 9.10e-13 ps. Reran analysis only. No trajectories, solver settings or physical assumptions changed. The triangle acceptance aggregation also now includes numerical validity and energy degeneracy, following independent review.
+
+MATLAB rendered the trajectory and six-state figures; 54 plotted series were reconciled with saved data. Both PNGs were visually inspected and minor label spacing was corrected. The interactive viewer's exported data exactly match the verified graph JSON. Browser checks passed 48 class/seam/interaction cases, all size counts, selected-neighbor highlighting, onsite selection and zoom/reset; desktop and 390-pixel screenshots were inspected, with no console errors or horizontal page overflow. Browser artifact writing to the external run path was unavailable through the browser connector; inspection used returned screenshots instead. Scientific figures and MATLAB logs were saved directly in the external run directory.
+
+MATLAB Code Analyzer reports 43 preparation notices (34 apparently unused workspace assignments, four variables supplied through evaluated source, three growth advisories and two scalar-length style advisories) and two plotting scalar-length style advisories. The preparation intentionally executes script text in a shared workspace; all runtime fixtures pass, but this is not a warning-free static-analysis result. Python/JavaScript syntax checks, protected-file hashes, new-file whitespace checks, tracked line-ending preservation and `git diff --check` pass.
+
+The [result report](docs/periodic-six-state.md) contains equations, quantitative criteria, exact rerun commands, data formats, evidence consulted and remaining physical limitations. Documentation updated: README, this plan, the earlier six-state report, the result report and links in both existing structure viewers. No AGENTS update is needed because production policy and defaults did not change. This is a diagnostic/test addition, so no changelog entry is required by the repository's test-only exclusion. No commits or pushes were made.
+
+## Periodic PRB switching comparison — 2026-11-09
+
+The user now requests whether this periodic model also reproduces the PRB 2024 results. Execute the existing Figure 2, 4(a), and 5 comparison using the already verified periodic `.model` inputs and unchanged `spatial.cpp`, `driven_figures.py` and `nonreciprocal_figures.py` functions. This is execution of supported existing tests with different verified graph inputs, not a new physical model, solver or source implementation. Preserve the preceding uncommitted diagnostic work. No production promotion is included.
+
+Class 3 fixed-length LLGS, with the same reciprocal J/2,D/2, uniform K, three axis classes and 48/108/300-spin periodic cells as approved above. The per-sublattice field sums exactly match the full-strength three-spin control for arbitrary sublattice vectors, so uniform field and SOT preserve the coherent subspace. Equal populations also equate site and balanced means. This predicts numerical agreement under coherent inputs; the test must still measure complete transients and spatial perturbations. Crystallographic construction and physical bond-normalization gaps remain unresolved.
+
+Reuse the prior reviewed-source protocols in `docs/reference-protocols.md` and `docs/nonreciprocal-switching.md`: 48 cases per model, six ideal first-spin seeds, +/-5e10 A/m2, +/-100 Oe, the 175:25:400,450,500 Oe sweep and +1000 Oe cases. Parameters and explicit SOT damping cross term remain unchanged; field/current are active during [1,4) ns of a 5 ns run. Figure 4(b)'s ferromagnet and unrepresented paper results are excluded. Quantitative comparisons are to the preserved verified numerical reference, not digitized paper curves.
+
+Run eight protocols at both 5 and 2.5 fs on all four models before expanding to the 192 primary trajectories. Four perturbed-start protocols per spatial size at both timesteps add 24 trajectories, for 248 total unique runs. Perturbation amplitude 0.001 is injected at t=0, leaving 1 ns before the pulse; this is not a disturbance applied during switching. Save means every 0.25 ps and full spins every 5 ps plus existing pulse-edge samples. Use fresh external directory `D:/Git_control/spin_dynamics/simulation_results/Mn3Sn/periodic-prb2024-20261109-*`.
+
+Verification sequence: verify source/binary/model hashes and existing periodic field/replay gates; independently recheck coherent field sums and replay the unchanged kernel against archived driven MATLAB/GPU fixtures; require full-spin pilot refinement <1e-5/component; then run the complete case matrix and perturbed refinements. Require correct update/pulse counts, finite states, norm error <1e-12, endpoint agreement <0.1 degree, and independently inspect raw endpoints, Fig. 4 z reversal and sampled Fig. 5 transition. Report site-mean and balanced-mean agreement and full transient reference errors. No monotonic-energy requirement under driven SOT. Existing reciprocal-edge fixture tests are evidence for the shared drive kernel, not fresh periodic spatial GPU runs; state that limitation explicitly.
+
+Record exact module-level invocations and configuration in the external run provenance. Source code remains unchanged; configuration selects `current` mode solely to preserve the reciprocal coefficients already exported in these inputs. Reuse the existing comparison analyzer with its configured size list. Write a focused result report and README update after completion, and use the MATLAB plotting skill for saved-data figures. An independent read-only verifier will audit the result. No new dependencies, network, commits, pushes or modifications of other repositories are required.
+
+### Completed periodic switching comparison
+
+All 248 unique trajectories pass in `D:/Git_control/spin_dynamics/simulation_results/Mn3Sn/periodic-prb2024-20261109-01`. Each periodic size passes all 48 primary protocols: 24 low-field cases, twelve field-sweep cases and twelve high-field cases. Complete ordinary site-mean trajectories differ from the preserved numerical reference by at most 7.72e-12/component. The coherent reduction was independently checked for every site; site and balanced means agree within 1.46e-15/component. Twenty archived driven MATLAB/GPU fixtures replay within 4.05e-16/component. No new periodic driven GPU run is claimed.
+
+Figure 4(a)'s negative-to-positive site-mean z crossing is 1.3990015336083 ns for all periodic sizes, about 0.399 ns after pulse activation. The sampled Figure 5(a) transition is bracketed by 275 < H <= 300 Oe. At +1000 Oe, both current signs and all six starts reach 90 degrees. The maximum endpoint error is below 6.63e-7 degrees. Full-spin timestep differences are at most 1.54e-8/component for pilots and 1.39e-7/component for perturbed starts; final recovery error is below 7.36e-14/component. Perturbations decay before the pulse and do not establish robustness to disturbances during switching.
+
+The independent read-only verifier checked all 248 runs without importing the analyzer, including raw saved spin vectors, exact seeds, clocks, pulse/update counts, endpoint classifications and timestep comparisons. It compared all 3,840,192 primary dense samples with the numerical reference and independently confirmed the site-mean conclusions. Source/kernel hashes and protected historical results remain unchanged.
+
+MATLAB generated two saved-data figures with 51 plotted series and 20,001 samples per time trace, without smoothing. Both PNGs were visually inspected; reference overlays and labels are legible. An initial chained MATLAB launch failed at the WSL socket boundary before plotting; a standalone `matlab -wait` retry completed successfully. The plotting copy, provenance, checks and logs are retained externally. The [comparison report](docs/periodic-prb2024.md) records measured results, exact rerun procedures and the distinction between quantitative numerical-reference agreement and qualitative published-figure agreement.
+
+Documentation updated: README, this plan, the periodic six-state report and the new periodic PRB comparison report. No production behavior or source changed, so no AGENTS or changelog update is needed for this test/report task. No commits or pushes were made.
+
+## Production periodic boundaries — 2026-11-09
+
+### Goal and Success Criteria
+
+The user explicitly requests promoting the verified periodic model into production and replacing the README figures with periodic results. This authorizes the implementation below without another confirmation. Require production-generated occupation, axes, exchange/DMI operators and short GPU trajectories to match the approved periodic diagnostic; all presets must select a valid periodic size, and README figures must use the verified periodic datasets. Preserve earlier uncommitted work and historical results.
+
+### Model Classification and Equation Family
+
+Class 3 simplified spatial atomistic model, deterministic fixed-length LLGS, three easy-axis classes of Mn spins. Every occupied site evolves independently; electronic response and physical crystallographic certification are outside scope. Spin arrays remain (W,L,time), occupied norms one, vacant slots exactly zero.
+
+### Existing Behavior and Reference Implementations
+
+Root production currently uses open boundaries, receiver-dependent weights, terminal-site deletions and unconditional exchange cuts. The preceding periodic diagnostic and PRB comparison establish the exact candidate to promote, including its unresolved physical interpretation. The active source and those verified outputs govern this change. ASTRO AGENTS/README and its boundary-field convention are context only; no GdFeCo topology, parameters or implementation are imported. Equation context remains `spintronic_methods.tex`, `sections/hamiltonian.tex`, `sections/material_parameters.tex`, `sections/atomistic_boundaries.tex` and `sections/llg_equation.tex`, especially `eq:llg-gilbert` and `eq:ll-with-flt`.
+
+### State Variables, Geometry, and Boundaries
+
+Set main bc=0 and every protocol to 8x8 slots (48 occupied, 16 in each class). Require W divisible by four and even L>=4. Keep the legacy bc=1 branch for open controls. Periodic occupation repeats the interior 4x2 motif without terminal deletions; each occupied spin has four distinct neighbors, two in each other class. The existing periodic cell/bond companion becomes the current periodic illustration; existing finite-patch viewers show only the retained open branch, with explicit links to the periodic view.
+
+| Physical detail | Adopted value or rule | Builder or interaction mapping | Qualifying reference and locator | Evidence status |
+|---|---|---|---|---|
+| Mn three-class spin order and switching conventions | Existing PRB reference convention | Initial spins, easy axes, parameters | [1], model and Figures 2,4,5; earlier PDF-backed review and [P1] | Unchanged source-backed reference reduction |
+| Physical lattice vectors, basis, stacking, site registry and shell assignment | None asserted | Schematic index graph only | No qualifying data in prior local KB/presentation review [P1,P2] | REFERENCE MISSING; physical construction remains blocked |
+| Repeated 4x2 code motif and periodic seam bookkeeping | Existing approved mathematical continuation | `distrib.m`, `integrate_llg.m` | Verified diagnostic, not a crystallographic source | Explicit Class 3 mathematical model |
+| J/2,D/2 per included bond | Two neighbors/class sum to reference J,D | Uniform .5 factors for bc=0 | Algebraic reduction in periodic reports; physical shell normalization unresolved | Approved mathematical normalization; physical shell claim REFERENCE MISSING |
+
+### Hamiltonian
+
+Retain the approved ordered-pair energy $E=(J/2)\sum_{ij}A_{ij}\mathbf m_i\cdot\mathbf m_j-(D/2)\sum_{ij}C_{ij}\hat x\cdot(\mathbf m_i\times\mathbf m_j)-K\sum_i(\mathbf e_i\cdot\mathbf m_i)^2-\mu\sum_i\mathbf B_{ext}\cdot\mathbf m_i$, with A symmetric, C antisymmetric, A=.5 and C=+/-.5 on included periodic bonds. Outer halves remove ordered-pair double counting. SOT is nonconservative.
+
+### Parameters and Evidence
+
+Keep all material, drive and numerical values in the preceding periodic PRB specification and [1]/[P1] unchanged: J/mu=100.812 T, D=.833 meV, K=.196 meV, mu=3 mu_B, gamma=1.760859644e11 rad/(s T), alpha=.003, Ms=441850 A/m, thickness30nm, thetaSH=.06 and polarization+x. Existing spacing .4nm is not a validated geometric metric. Relaxation remains 10ps at .5fs with100fs sampling (not a full settling run); figure presets remain5ns at5fs with.25ps sampling and pulses[1,4)ns. Thermal noise, dipoles, walls and fixed edges stay disabled and unvalidated.
+
+### Effective Fields and Units Check
+
+The unchanged field expressions are $\mathbf B_i=-(J/\mu)\sum_j A_{ij}\mathbf m_j+(D/\mu)\sum_j C_{ij}(0,m_{jz},-m_{jy})+(2K/\mu)(\mathbf e_i\cdot\mathbf m_i)\mathbf e_i+\mathbf B_{ext}$. These equal $-\mu^{-1}\partial E/\partial\mathbf m_i$ and have units J/(J/T)=T. Check periodic seams and termwise gradients independently before replaying dynamics.
+
+### Dynamical Equation and Nonconservative Torques
+
+Retain `atom_llgs_rhs.m` unchanged: $(1+\alpha^2)\dot{\mathbf m}=-\gamma\mathbf m\times\mathbf B-\alpha\gamma\mathbf m\times(\mathbf m\times\mathbf B)-\gamma b\mathbf m\times(\mathbf m\times\mathbf p)+\alpha\gamma b\mathbf m\times\mathbf p$, plus the existing disabled field-like/STT terms. Use the reference field-equivalent SOT amplitude and preserve its damping cross term. No stochastic convention changes.
+
+### Initial Conditions, Solver, and Outputs
+
+Keep existing seed angles, coupled RK4 stage evaluation, final-only projection, pulse timing, saved-time schema and output filename. Run verification in fresh external `periodic-production-20261109-01`; protect root results and preceding datasets. The already verified periodic PNGs may be copied into docs for portable README rendering, with hashes checked against the external originals. Historical three-spin images remain available.
+
+### Implementation Mapping
+
+| Stage | Implementation | Verification gate |
+|---|---|---|
+| Structure | bc-dependent terminal deletion; valid periodic dimensions;8x8 presets | Equal counts, exact match to archived periodic occupation/axes/seeds; invalid size rejected |
+| Topology | bc=1-only edge cuts and weighting; uniform periodic factors; current periodic viewer | Impulse A,C equal archived operators and independently enumerated wrapped bonds; open control unchanged |
+| Fields | Preserve field formulas; update preparation to execute source directly | Random-state fields<1e-11T; term gradients<1e-6T; translation invariance |
+| RHS | No changes | Implicit Gilbert residual/gamma<1e-10T; existing torque checks |
+| Integrator | No stage/timing changes; update affected harness mappings | Fresh undriven/driven GPU replay<1e-10/component; coupled convergence and protocol checks |
+| Outputs | README periodic PNGs/captions/defaults; source-synchronized viewers | Image hashes, browser checks, norms/vacancies/clocks, protected-file hashes and diff review |
+
+Do not proceed past a failed gate. Keep geometry/weights in setup, fields in the existing field evaluation, RHS consuming fields/torques, and integration/orchestration in their existing locations. An independent read-only verifier audits the promotion.
+
+### Verification and Acceptance Criteria
+
+Use updated `prepare_periodic` and `periodic_six_states.py gates` against unmodified production source. Compare every exported model to the preceding diagnostic input. Run `check_protocols` on periodic presets and `check_coupled_rk4` on the preserved open triangle plus valid periodic cell. Replay short driven production trajectories across pulse/chunk boundaries against independent coupled fields; do not rerun all long sweeps if identical operators/parameters and unchanged integrator are established. Refresh open-view source snapshots and validate Node/browser consistency; validate periodic-view data against the new production exports. Inspect README image rendering. Record exact commands, environment and measured errors.
+
+### References
+
+[1], [P1] and [P2] resolve to the full journal entry and exact local evidence paths already recorded in the preceding periodic diagnostic References section. Evidence reuse introduces no new literature claim or physical structure. Published-figure agreement remains qualitative; numerical-reference agreement is quantitative.
+
+### Assumptions, Missing References, Risks, and Approval Questions
+
+Approved decision: the user's present instruction promotes the exact tested mathematical periodic model and its figures. Selecting the smallest previously tested periodic size (8x8) preserves practical defaults. Physical crystallographic mapping and exchange-shell normalization remain REFERENCE MISSING and are not implemented or claimed. Open-boundary receiver weighting remains legacy behavior. No new physics, dependencies, network, commits or pushes are included. No further approval question is needed within this explicitly requested scope.
+
+### Completed production promotion
+
+Implemented bc=0 and 8x8 defaults, periodic size rejection, bc-dependent termination/cuts and uniform periodic half-strength coefficients. The coupled RK4 stages, explicit derivative, physical parameters, times and save behavior are unchanged. Preparation now executes actual production source without overrides; retained open helpers set bc before constructing sites. The README uses byte-identical copies of the two verified periodic PRB figures. Historical figures/results are retained.
+
+All numerical gates pass in `periodic-production-20261109-01`: all five model files and ten fresh GPU fixture binaries are byte-identical to the approved diagnostic. Maximum source/matrix field discrepancy is 5.69e-14 T, energy-gradient discrepancy 1.59e-8 T and C++/GPU discrepancy 2.23e-16/component. All 35 presets and eight pulse/chunk cases pass, with reference error 9.16e-16 and zero chunk error. Twelve fixed-seed fully nonuniform driven GPU cases (48/108/300 spins, both current and field signs) agree with independently assembled fields/vector RK4 within 4.00e-15/component. Norm errors are below 2.23e-16; empty slots remain zero; clocks and 60/31 total/active updates agree. Five invalid periodic shapes are rejected. Coupled convergence gives orders 3.8016/3.9136; CPU/GPU discrepancy is zero; three retained open-triangle driven probes pass within 4.43e-14/component.
+
+The independent read-only reviewer confirms source/operator equivalence, unchanged open snapshots, matching source hashes and exact README image provenance. The new driven gate retains scalar discrepancies rather than raw states; independent raw-state checks cover the earlier long sweeps and fresh undriven fixtures, while the reviewer inspected the new driven implementation/results. The earlier 78/248-run sweeps were not repeated after establishing equivalence.
+
+The periodic viewer now defaults to8x8 and carries fresh production source hashes. Open viewers expose onlybc=1; all ten open snapshots/operators remain unchanged and Node checks183,850 entries. Browser checks pass72 periodic class/seam/term cases, neighbor selection, zoom/reset and12 open interaction cases, with no console errors or horizontal overflow. Mobile rendering was inspected. A desktop screenshot request stalled and was terminated; desktop DOM checks passed but a fresh desktop screenshot is unverified. Initial browser test scripts dispatched change instead of the actual input event for term controls; correcting the test events resolved those test-script failures without a UI change. An initial gates command reversed its two positional arguments and exited before execution; the corrected command passed.
+
+Exact commands, environment, compatibility changes and measured results are recorded in [periodic-production.md](docs/periodic-production.md). Documentation updated: README, CHANGELOG, project AGENTS, this plan, current/historical protocol reports and the affected viewer pages/data. No dependencies, network, commits or pushes were used.

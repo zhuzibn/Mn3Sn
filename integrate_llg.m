@@ -26,38 +26,38 @@ AsimnextWleft=zeros(natomW,natomL);
 AsimnextWright=zeros(natomW,natomL);
 
 AsimnextL(2:2:natomW,:)=Jintra;
-AsimnextL(:,end)=0;
+if bc==1,AsimnextL(:,end)=0;end
 
 AsimpreviousL(2:2:natomW,:)=Jintra;
-AsimpreviousL(:,1)=0;
+if bc==1,AsimpreviousL(:,1)=0;end
 
 AsimnextW(1:4:natomW,1:2:natomL)=Jintra;
 AsimnextW(2:4:natomW,1:2:natomL)=Jintra;
 AsimnextW(3:4:natomW,2:2:natomL)=Jintra;
 AsimnextW(4:4:natomW,2:2:natomL)=Jintra;
-AsimnextW(1,:)=0;AsimnextW(:,end)=0;
+if bc==1,AsimnextW(1,:)=0;AsimnextW(:,end)=0;end
 
 AsimpreviousW(1:4:natomW,1:2:natomL)=Jintra;
 AsimpreviousW(2:4:natomW,2:2:natomL)=Jintra;
 AsimpreviousW(3:4:natomW,2:2:natomL)=Jintra;
 AsimpreviousW(4:4:natomW,1:2:natomL)=Jintra;
-AsimpreviousW(end,:)=0;AsimnextW(:,end)=0;
+if bc==1,AsimpreviousW(end,:)=0;AsimnextW(:,end)=0;end
 
 AsimpreviousWleft(2:4:natomW,1:2:natomL)=Jintra;
 AsimpreviousWleft(4:4:natomW,2:2:natomL)=Jintra;
-AsimpreviousWleft(end,:)=0;AsimpreviousWleft(:,1)=0;
+if bc==1,AsimpreviousWleft(end,:)=0;AsimpreviousWleft(:,1)=0;end
 
 AsimpreviousWright(1:4:natomW,1:2:natomL)=Jintra;
 AsimpreviousWright(3:4:natomW,2:2:natomL)=Jintra;
-AsimpreviousWright(end,:)=0;AsimpreviousWright(:,end)=0;
+if bc==1,AsimpreviousWright(end,:)=0;AsimpreviousWright(:,end)=0;end
 
 AsimnextWleft(2:4:natomW,2:2:natomL)=Jintra;
 AsimnextWleft(4:4:natomW,1:2:natomL)=Jintra;
-AsimnextWleft(1,:)=0;AsimnextWleft(:,1)=0;
+if bc==1,AsimnextWleft(1,:)=0;AsimnextWleft(:,1)=0;end
 
 AsimnextWright(1:4:natomW,1:2:natomL)=Jintra;
 AsimnextWright(3:4:natomW,2:2:natomL)=Jintra;
-AsimnextWright(1,:)=0;AsimnextWright(:,end)=0;
+if bc==1,AsimnextWright(1,:)=0;AsimnextWright(:,end)=0;end
 
 for ctL=1:natomL
     for ctW=1:natomW

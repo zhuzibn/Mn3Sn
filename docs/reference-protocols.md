@@ -1,5 +1,7 @@
 # Reference parameters and explicit figure protocols
 
+**Current geometry:** all production presets now use the verified 8×8 periodic array (48 spins). The three-spin geometry and run commands below describe the earlier parameter-alignment baseline. Material values, seed conventions and time grids remain unchanged; see [periodic production verification](periodic-production.md) for current checks and output shapes.
+
 This update adopts the approved `Mn3Sn_3atoms` material conventions in the
 production source, adds explicit relaxation/figure settings, and fixes the
 time accounting required to apply their pulses correctly. **Spatial exchange

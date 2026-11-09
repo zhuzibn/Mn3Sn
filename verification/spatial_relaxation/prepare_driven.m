@@ -10,7 +10,7 @@ tags={'2x2','5x5','13x14','21x22'};checks={};
 for q=1:numel(tags)
  tag=tags{q};dims=sscanf(tag,'%dx%d');natomW=dims(1);natomL=dims(2);natom=natomW*natomL;
  dwcalc=0;load_fixed_atom_distrib=0;save_fixed_atom_distrib=0;initial_theta_deg=210;
- systemgeneration;occ=find(atomtype_==1);N=numel(occ);bc=1;
+ bc=1;systemgeneration;occ=find(atomtype_==1);N=numel(occ);
  source_hex=hex_constant;source_dmi=hdmi_constant;
  data=load(fullfile(source,[tag '-static.mat']));
  axes=[coeffs_1(occ) coeffs_2(occ) coeffs_3(occ)];assert(isequal(occ,data.occ) && isequal(axes,data.axes));

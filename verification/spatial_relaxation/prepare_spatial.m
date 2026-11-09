@@ -9,7 +9,7 @@ meta=struct('matlab',version,'gpu',dev.Name,'sizes',sizes); writejson(fullfile(o
 for q=1:size(sizes,1)
  natomW=sizes(q,1);natomL=sizes(q,2);natom=natomW*natomL;
  dwcalc=0;load_fixed_atom_distrib=0;save_fixed_atom_distrib=0;initial_theta_deg=121;
- systemgeneration; occ=find(atomtype_==1);N=numel(occ);bc=1;
+ bc=1;systemgeneration; occ=find(atomtype_==1);N=numel(occ);
  Jintra=100.812*(3*mub);Ksim=.196e-3*ele;Dsim=.833e-3*ele;musRE=3*mub;gamRE=gam;alp=.003;
  names={'nextL','previousL','nextW','previousW','previousWleft','previousWright','nextWleft','nextWright'};
  for k=1:8,eval(['Asim' names{k} '=zeros(natomW,natomL);']);end

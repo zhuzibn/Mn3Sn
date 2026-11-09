@@ -1,11 +1,11 @@
 function p=mn3sn_protocol(name,value)
-% One relaxation or PRB 109, 134433 (2024) figure trajectory.
+% One 48-spin periodic relaxation or PRB 109, 134433 (2024) figure trajectory.
 % For fig2d/fig5b/fig5c, value is the first-spin seed in degrees.
 % For fig5a, value is the field in Oe. Other presets take no value.
 if nargin<1, name='relaxation'; end
 if nargin<2, value=[]; end
 name=validatestring(name,{'relaxation','fig2a','fig2b','fig2c','fig2d','fig4a','fig5a','fig5b','fig5c'});
-p=struct('name',name,'natomW',2,'natomL',2,'seed_deg',270, ...
+p=struct('name',name,'natomW',8,'natomL',8,'seed_deg',270, ...
     'current',5e10,'field',[0 .01 0],'pulse_start',1e-9,'pulse_end',4e-9, ...
     'runtime',5e-9,'tstep',5e-15,'gpusave',10e-12,'savetstep',50);
 if ismember(name,{'fig2d','fig5b','fig5c'})
@@ -23,7 +23,7 @@ else
 end
 switch name
     case 'relaxation'
-        p.natomW=5;p.natomL=5;p.seed_deg=121;
+        p.seed_deg=121;
         p.current=0;p.field=[0 0 0];p.pulse_start=0;p.pulse_end=Inf;
         p.runtime=10e-12;p.tstep=.5e-15;p.gpusave=1e-12;p.savetstep=200;
     case 'fig2b'

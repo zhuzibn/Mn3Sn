@@ -35,9 +35,10 @@ if strcmp(phase,'initial')
     [cpu,~]=simulate(src,p,m,20,5e-15,.01,p.b,false,2);
     [gpu,~]=simulate(src,p,m,20,5e-15,.01,p.b,true,2);
     gpuError=max(abs(cpu-gpu),[],'all');assert(gpuError<1e-11);
-    % Larger source lattice, both legacy boundary flags: numerical invariants only.
+    % Valid periodic and retained open lattices: numerical invariants.
     for bc=[0 1]
-        [a,~]=simulate(src,S.native,[],8,.5e-15,0,0,true,5,bc);
+        W=5;if bc==0,W=8;end
+        [a,~]=simulate(src,S.native,[],8,.5e-15,0,0,true,W,bc);
         assert(all(isfinite(a),'all'));
     end
     writejson(fullfile(out,'production-gates.json'),struct('pass',true,'matlab',version, ...

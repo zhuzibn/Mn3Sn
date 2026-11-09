@@ -8,6 +8,11 @@
 %     end
 % end
 %% Mn3Sn
+assert(isscalar(bc) && ismember(bc,[0 1]),'Mn3Sn:Boundary','bc must be 0 (periodic) or 1 (open).');
+if bc==0
+    assert(natomW>=4 && mod(natomW,4)==0 && natomL>=4 && mod(natomL,2)==0, ...
+        'Mn3Sn:PeriodicSize','Periodic arrays require W divisible by 4 and even L>=4.');
+end
 atomtype_=10*ones(natomW,natomL);
 for ctL=1:natomL
     for ctW=1:natomW
@@ -18,10 +23,10 @@ for ctL=1:natomL
         elseif mod(ctW,4)==3 && mod(ctL,2)==1
             %row 3, odd column no atom
             atomtype_(ctW,ctL)=3;
-        elseif mod(ctW,4)==1 && ctL==natomL
+        elseif bc==1 && mod(ctW,4)==1 && ctL==natomL
             %row 1, remove the last atom to ensure complete triangle
             atomtype_(ctW,ctL)=3;
-        elseif mod(ctW,4)==3 && ctL==natomL
+        elseif bc==1 && mod(ctW,4)==3 && ctL==natomL
             %row 3, remove the last atom to ensure complete triangle
             atomtype_(ctW,ctL)=3;
         else
@@ -46,6 +51,7 @@ clear tmp ctW ctL ctz
 
 % mid/2
 hex_constant = ones(natomW, natomL)* 0.5;
+if bc==1 % Retain legacy open-edge receiver weights.
 hex_constant(:, [1,end]) = 1;
 for ctL=1:natomL
     for ctW=1:natomW
@@ -55,6 +61,7 @@ end
     end
 end
 hex_constant([1,end], :) = 1;
+end % Periodic bonds retain the uniform factor 1/2.
 %% hdmi
 hdmi_constant1=zeros(natomW,natomL);
 hdmi_constant2=zeros(natomW,natomL);
@@ -63,7 +70,7 @@ hdmi_constant = hex_constant;
 
 hdmi_constant1(1:4:natomW,1:2:natomL) = 1;
 hdmi_constant1(3:4:natomW,2:2:natomL) = 1;
-hdmi_constant1(1:4:natomW,end) = 0;
+if bc==1,hdmi_constant1(1:4:natomW,end) = 0;end
 hdmi_constant2(2:4:natomW,2:2:natomL) = 1;
 hdmi_constant2(4:4:natomW,1:2:natomL) = 1;
 hdmi_constant3(2:4:natomW,1:2:natomL) = 1;

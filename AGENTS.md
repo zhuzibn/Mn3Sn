@@ -26,7 +26,7 @@ Use the installed `spin-dynamics-development` skill for physics, field, torque, 
 - MATLAB with Parallel Computing Toolbox and a supported NVIDIA GPU is required. `normrnd` additionally requires Statistics and Machine Learning Toolbox when thermal noise is enabled.
 - Do not assume Octave compatibility or a CPU simulation backend.
 - Production command: `matlab -batch "run('main.m')"`. It overwrites `finalnew.mat`; preserve existing data and obtain authorization for overwriting user results.
-- There is currently no production output-path override, restart loader, or CI workflow. Select `mn3sn_protocol` inside `main.m` for relaxation or a three-spin figure case. See `docs/reference-protocols.md` for parameter and clock checks and `docs/frozen-field-repair.md` for the earlier integrator evidence.
+- There is currently no production output-path override, restart loader, or CI workflow. Select `mn3sn_protocol` inside `main.m` for relaxation or a periodic figure case. See `docs/reference-protocols.md` for parameter and clock checks and `docs/frozen-field-repair.md` for the earlier integrator evidence.
 - The disabled visualization block uses an external `threedplott` function and a machine-specific path. Do not enable or port it unless requested.
 
 ## Scientific conventions to preserve
@@ -35,10 +35,10 @@ Use the installed `spin-dynamics-development` skill for physics, field, torque, 
 - `atomtype_==1` means occupied Mn; `atomtype_==3` means empty. Empty slots remain exactly zero and are excluded from norm checks and physical averages.
 - Occupied sites currently use `musRE`, `gamRE`, and the `RE` torque amplitudes. These legacy names do not establish rare-earth/transition-metal composition in Mn3Sn.
 - Initial spins and easy axes lie in the spin-space $yz$ plane, with default SOT polarization $+x$. Do not equate array indices with crystallographic coordinates without a sourced mapping.
-- `bc=1` requests open boundaries; `bc=0` requests periodic shifts. Existing coefficient masks prevent treating the latter as verified periodic topology.
+- `bc=0` is the production default: complete periodic repeats, uniform half-strength exchange/DMI bonds and uniform K. Require W>=4 divisible by four and even L>=4. All protocol defaults use 8x8 slots (48 spins). `bc=1` retains the legacy open weights and terminal cuts; the 2x2 open array remains a verification control.
 - Effective fields entering LLGS are in tesla; gamma is rad/(s T), moments are J/T, and interaction coefficients are energies in J. `H` variable names do not imply A/m.
 - `constantfile.m` stores `hbar` in eV s. Derive conversions before changing gamma or torque prefactors.
-- `Ksim` is the onsite energy coefficient in `-Ksim*(e dot m)^2`; its field uses `2*Ksim/mu`. Keep `tz=30 nm` film thickness separate from `d=0.4 nm` legacy spatial spacing. Native Mn parameters match `Mn3Sn_3atoms`; spatial receiver weights remain deliberately unresolved.
+- `Ksim` is the onsite energy coefficient in `-Ksim*(e dot m)^2`; its field uses `2*Ksim/mu`. Keep `tz=30 nm` film thickness separate from `d=0.4 nm` legacy spatial spacing. Native Mn parameters match `Mn3Sn_3atoms`. Periodic bonds use Jintra/2 and Dsim/2; open receiver weights remain legacy. Physical lattice mapping and exchange-shell normalization remain unresolved.
 - Do not silently alter interaction signs, pair counting, site scaling, anisotropy factors, moment/volume factors, thickness, damping cross terms, timestep, drive timing, noise generation, or normalization.
 - Source every physical lattice, basis, neighbor, DMI orientation, or parameter change. Label unsupported details `REFERENCE MISSING` and block that portion of implementation.
 - Reconcile published Hamiltonians with their field derivatives explicitly. Do not transplant the ASTRO ferrimagnetic DMI geometry or material parameters into this model.
@@ -46,7 +46,7 @@ Use the installed `spin-dynamics-development` skill for physics, field, torque, 
 
 ## Solver and optional-path policy
 
-`rk4=1` is the default coupled RK4 path. Recompute fields from the complete unnormalized lattice at each stage through `integrate_llg.m`, evaluate the explicit derivative with `atom_llgs_rhs.m`, and normalize occupied spins only after combining stages. `atomgpurk4.m` is retained as a historical frozen-field kernel, not the active RK4 step. Keep the production GPU replay and coupled-convergence checks in `verification/check_coupled_rk4.m` passing when modifying stages. Validation is restricted to deterministic, unpinned, dipole-free cases; larger-lattice topology is not certified by the three-site figure comparison.
+`rk4=1` is the default coupled RK4 path. Recompute fields from the complete unnormalized lattice at each stage through `integrate_llg.m`, evaluate the explicit derivative with `atom_llgs_rhs.m`, and normalize occupied spins only after combining stages. `atomgpurk4.m` is retained as a historical frozen-field kernel, not the active RK4 step. Keep the production GPU replay and coupled-convergence checks in `verification/check_coupled_rk4.m` passing when modifying stages. Validation is restricted to deterministic, unpinned, dipole-free cases; periodic seam/topology checks are in `verification/spatial_relaxation/prepare_periodic.m` and `periodic_six_states.py`, with driven production checks in `verification/check_periodic_production.m`. Their code-graph verification does not certify crystallographic topology.
 
 Heun (`rk4=0`) and predictor-corrector (`rk4=2`) are legacy paths with known defects. Do not use them for production or restore support without scoped tests. Early rejection is a proposed improvement, not behavior already implemented.
 

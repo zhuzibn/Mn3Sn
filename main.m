@@ -7,7 +7,7 @@ gpuDevice(1)%select GPU device
 constantfile;
 protocol=mn3sn_protocol('relaxation');%e.g. ('fig4a'), ('fig5a',300), ('fig5b',210)
 rk4=1;%1:rk4,0:heun Method,2:4th predictor-corrector
-bc=1;%0.periodic condition;1,not periodic
+bc=0;%0: verified periodic model; 1: legacy open boundaries
 DMIenable=1;
 dwcalc=0;%1:simulate dw motion 0: no domain wall
 thermalenable=0;%enable thermal field?
@@ -64,7 +64,7 @@ Ksim=0.196*1e-3*ele;
 %or 0.807246e-23;%[J], easy-axis anisotropy, 2011-nature-I. Radu, 
 % this value is questionable
 %Renjie and Zhengde for pointing out that 0.4e-3*ele is too large.
-Jintra=100.812*(3*mub);%[J/link], exact Mn3Sn_3atoms exchange field normalization
+Jintra=100.812*(3*mub);%[J], reference coefficient; periodic bonds use Jintra/2
 Jfefe=-2.835e-21;Jfegd=1.09e-21;%[J/link], 2011-nature-I. Radu
 gTM=2.2;%legacy inactive TM g-factor
 gamTM=gTM*mub/(hbar*ele);%1/(s.T)refer to "PRL 97, 217202 (2006), Jiang Xin"

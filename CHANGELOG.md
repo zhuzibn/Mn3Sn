@@ -59,6 +59,14 @@ Use the fields below where useful; omit inapplicable fields:
 - **Description:** Move the checkout to `D:\Git_control\spin_dynamics\Mn3Sn` and its external results under `D:\Git_control\spin_dynamics\simulation_results\Mn3Sn`. Update current output instructions and reproduction commands; retain historical provenance paths.
 - **Test Strategy:** Compare branch, HEAD, status and binary diffs with the pre-move snapshot before path edits; check documentation diffs. No numerical source changes or simulations.
 
+
+### 2026-11-09 | Periodic production model and README figures
+- **Type:** change
+- **Description:** Make complete periodic boundaries the default for relaxation and figure presets, using 8×8 slots (48 spins), reciprocal Jintra/2 exchange, antisymmetric Dsim/2 DMI and uniform anisotropy. Restore periodic seam bonds and reject dimensions that cannot tile the motif. README figures now show the verified periodic simulations.
+- **Compatibility:** Preset array shapes change to 8×8; time grids, pulse timing, material coefficients, RK4 stages and output filenames are unchanged. The legacy open branch remains available with bc=1. The default 10 ps relaxation is still a short smoke example.
+- **Reference:** [Production verification](docs/periodic-production.md), [periodic PRB comparison](docs/periodic-prb2024.md).
+- **Test Strategy:** Exact model/fixture equivalence to the approved diagnostic; seam, gradient, fresh MATLAB/GPU drive, protocol, coupled-convergence and viewer/source checks. Physical crystallographic mapping remains unresolved.
+
 ---
 
 ## Section 2: Error & Solution Log

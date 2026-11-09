@@ -1,5 +1,5 @@
 function export_visualization_data(outputFile)
-% CPU-only source snapshot and independent impulse checks. No integration.
+% CPU-only retained open-branch snapshot and independent impulse checks. No integration.
 % From the repository root:
 % addpath('docs'); export_visualization_data('docs/mn3sn-data.js')
 assert(nargin == 1, 'Specify the output JS path explicitly.');
@@ -52,7 +52,7 @@ snapshots = cell(1,size(sizes,1));
 for k = 1:size(sizes,1)
     natomW = sizes(k,1); natomL = sizes(k,2);
     load_fixed_atom_distrib = 0; save_fixed_atom_distrib = 0; dwcalc = 0;
-    systemgeneration;
+    bc=1;systemgeneration;
     for q = 1:8, eval(['Asim' qnames{q} '=zeros(natomW,natomL);']); end
     eval(setup);
     occupied = find(atomtype_==1);
@@ -77,8 +77,8 @@ for k = 1:size(sizes,1)
         'axes',axes,'spins',spins,'scale',hex_constant(:).', ...
         'dmiMasks',[hdmi_constant1(:) hdmi_constant2(:) hdmi_constant3(:)], ...
         'exchange',ex,'dmi',dm);
-    probes = cell(1,2);
-    for bc = [1 0]
+    probes = cell(1,1);
+    for bc = 1
         % Build predicted operators from individual displayed reads.
         E = zeros(n); D = zeros(n);
         for i = occupied.'
@@ -132,9 +132,9 @@ for k = 1:size(sizes,1)
     end
     s.probes=probes;
     snapshots{k}=s;
-    fprintf('%dx%d: %d occupied; both boundaries, exchange/DMI/anisotropy impulse checks passed\n',natomW,natomL,numel(occupied));
+    fprintf('%dx%d: %d occupied; open boundary, exchange/DMI/anisotropy impulse checks passed\n',natomW,natomL,numel(occupied));
 end
-data=struct('schema',1,'description','Current-code snapshot; schematic coordinates only', ...
+data=struct('schema',1,'description','Current open-branch snapshot; schematic coordinates only', ...
     'matlab',version,'hashes',hashes,'shiftNames',{qnames},'offsets',offsets, ...
     'parameters',struct('J',Jintra,'D',Dsim,'K',Ksim,'mu',musRE,'joulesPerMeV',ele*1e-3), ...
     'sources',sources,'snapshots',{snapshots},'tolerance',1e-12);

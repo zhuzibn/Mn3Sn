@@ -4,6 +4,8 @@ The six-state criterion changes the interpretation of the [earlier one-seed chec
 
 **Subsequent correction trial:** the reciprocal result here uses uniform onsite K. A [new trial with $K_i=Kz_i/4$](anisotropy-six-state.md) recovers all six stable, equal-energy states on the same graphs. This report preserves the uniform-K baseline; the new boundary-model assumption and its validation are documented separately.
 
+**Periodic follow-up:** [complete periodic cells with uniform K](periodic-six-state.md) also recover all six states, without coordination-dependent anisotropy. The periodic test uses equal class populations and verified reciprocal seam bonds. Selecting `bc=0` alone was insufficient in the historical source used here; the [production promotion](periodic-production.md) now implements that verified graph directly.
+
 ## First: the six reference states
 
 These are actual relaxed vectors from the three-spin control at zero field/current, using the native parameters already matched to PRB **109**, 134433 (2024). Angles run from +z toward +y in the spin-space yz plane. Site positions in the diagram are schematic. Blue, orange and green identify sublattices a, b and c; the black arrow is the small mean spin multiplied by 180 for visibility.

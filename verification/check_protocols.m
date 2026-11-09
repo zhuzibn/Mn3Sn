@@ -16,10 +16,10 @@ for q=1:numel(presets)
     assert(r.spacing==.4e-9 && r.thickness==30e-9);
     assert(r.gpusteps-1==round(p.gpusave/p.tstep));
     if strcmp(p.name,'relaxation')
-        assert(r.occupied==16 && p.seed_deg==121 && p.current==0 && all(p.field==0));
+        assert(r.occupied==48 && p.seed_deg==121 && p.current==0 && all(p.field==0));
         assert(r.updates==20000 && r.frames==101);
     else
-        assert(r.occupied==3 && r.updates==1000000 && r.frames==20001);
+        assert(r.occupied==48 && r.updates==1000000 && r.frames==20001);
         assert(p.pulse_start==1e-9 && p.pulse_end==4e-9);
         m=r.initial;angles=(p.seed_deg+(0:2)*120)'*pi/180;
         expected=[sin(angles)*cos(pi/2),sin(angles)*sin(pi/2),cos(angles)];
@@ -70,7 +70,7 @@ for edges=[13 44;12 48]'
     end
 end
 assert(max(errors)<1e-10 && max(chunkErrors)<1e-12);
-% Actual default initialization, shortened duration only, on the 5x5 lattice.
+% Actual default initialization, shortened duration only, on the 8x8 periodic lattice.
 p=mn3sn_protocol('relaxation');p.runtime=24*p.tstep;p.gpusave=8*p.tstep;p.savetstep=5;
 source_run(p,true);
 result=struct('pass',true,'presets_checked',numel(presets),'pulse_cases',numel(errors), ...
@@ -90,7 +90,13 @@ eval(src);
 r=struct('mu',musRE,'J',Jintra,'Kfield',2*Ksim,'gamma',gamRE,'Ms',msRE, ...
     'thickness',tz,'spacing',d,'b',BDSOTRE,'gpusteps',gpusteps,'updates',totstep, ...
     'occupied',nnz(atomtype_==1),'frames',numel(unique([0:savetstep:totstep totstep])));
-map=[4 1 2];r.initial=[mx_init(map)' my_init(map)' mz_init(map)'];
+occ=find(atomtype_==1);axes=[coeffs_1(occ) coeffs_2(occ) coeffs_3(occ)];
+classes=ones(numel(occ),1);classes(axes(:,2)<-.5)=2;classes(axes(:,3)<0 & axes(:,2)>-.5)=3;
+map=zeros(1,3);for k=1:3,map(k)=occ(find(classes==k,1));end
+r.initial=[mx_init(map)' my_init(map)' mz_init(map)'];
+all_initial=[mx_init(occ) my_init(occ) mz_init(occ)];
+assert(max(abs(all_initial-r.initial(classes,:)),[],'all')<1e-14);
+assert(bc==0 && all(accumarray(classes,1,[3 1])==16));
 if ~integrate,return;end
 integrate_llg;
 r.t=t;r.active_updates=pulse_active_updates;
@@ -100,9 +106,14 @@ mask=repmat(atomtype_==1,1,1,numel(t));empty=repmat(atomtype_==3,1,1,numel(t));
 norms=sqrt(mmx.^2+mmy.^2+mmz.^2);
 assert(all(isfinite(norms),'all') && max(abs(norms(mask)-1))<1e-12);
 assert(all(mmx(empty)==0 & mmy(empty)==0 & mmz(empty)==0));
-if natomW==2
-    x=reshape(mmx,4,[]);y=reshape(mmy,4,[]);z=reshape(mmz,4,[]);r.spins=zeros(numel(t),9);
-    for i=1:3,r.spins(:,3*i-2:3*i)=[x(map(i),:)' y(map(i),:)' z(map(i),:)'];end
+x=reshape(mmx,natomW*natomL,[]);y=reshape(mmy,natomW*natomL,[]);z=reshape(mmz,natomW*natomL,[]);
+r.spins=zeros(numel(t),9);
+for i=1:3
+    r.spins(:,3*i-2:3*i)=[x(map(i),:)' y(map(i),:)' z(map(i),:)'];
+    members=occ(classes==i);
+    assert(max(abs(x(members,:)-x(map(i),:)),[],'all')<1e-12);
+    assert(max(abs(y(members,:)-y(map(i),:)),[],'all')<1e-12);
+    assert(max(abs(z(members,:)-z(map(i),:)),[],'all')<1e-12);
 end
 end
 

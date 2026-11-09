@@ -5,7 +5,7 @@ Existing local data retain their paths relative to this checkout.
 
 MATLAB code for a two-dimensional, spatially resolved classical-spin model of Mn$_3$Sn, associated with the three publications listed below. The repository constructs a masked kagome-like array and integrates fixed-length LLGS dynamics using an NVIDIA GPU.
 
-**Status:** the default configuration is a small, undriven relaxation example with material conventions matched to `Mn3Sn_3atoms`. Reduced to three magnetic sublattices, the current code reproduces the switching behavior in Figures 2, 4(a), and 5 of the 2024 PRB paper; see the [reproduction results and plots](#reproduction-of-the-2024-prb-figures) below. The spatial exchange weights remain unresolved and explicitly deferred; see [plan.md](plan.md) for evidence and verification gates.
+**Status:** production now uses reciprocal periodic boundaries (`bc=0`) on an 8×8 array with 48 independently evolving spins. The verified periodic model retains six stable orientations and reproduces the switching behavior of Figures 2, 4(a), and 5 of the 2024 PRB paper under the tested protocols. See the [periodic results and plots](#reproduction-of-the-2024-prb-figures) and [production verification](docs/periodic-production.md). The code graph is a mathematical model; physical crystallographic mapping and exchange-shell normalization remain unresolved.
 
 ## Publications and model scope
 
@@ -56,41 +56,37 @@ Edit the `protocol=mn3sn_protocol(...)` line near the top of `main.m`. The defau
 
 Choose `seed` from `30:60:330` degrees (default 210), and Fig. 5(a) `field` from `175:25:400`, 450, or 500 Oe (default 250). These are first-spin angles; the relaxed mean-spin angle is `60-seed` modulo 360 degrees. The other spins are offset by 120 degrees. Figure 4(b)'s ferromagnet is excluded.
 
-Relaxation uses the existing 5×5 array, 10 ps runtime, 0.5 fs steps and 100 fs sampling. Figure presets select the verified 2×2 reduction with three occupied spins, 5 ns runtime, 5 fs steps and 0.25 ps sampling. Current and field are on for updates beginning in `[1 ns,4 ns)` and off otherwise. Both use the same material parameters below. Initial ideal 120-degree seeds retain startup ringing; no pre-relaxed state is silently substituted.
+All presets use **8×8 slots, 48 occupied spins**, with periodic boundaries in both array directions. Relaxation retains its 10 ps runtime, 0.5 fs steps and 100 fs sampling; this short default is a smoke example, not enough to establish settling. Figure presets use 5 ns runtime, 5 fs steps and 0.25 ps sampling. Current and field are on for updates beginning in `[1 ns,4 ns)` and off otherwise. Initial ideal 120-degree seeds retain startup ringing.
 
-For three-spin outputs, compute the unnormalized mean over **occupied** sites and use `atan2d(mean_y,mean_z)`. Its angle at the exactly compensated initial state is undefined. See [parameter alignment and protocol verification](docs/reference-protocols.md) for the field convention, checks and limitations.
+For another periodic size, set `protocol.natomW` and `protocol.natomL` immediately after selecting the protocol in `main.m`. W must be a positive multiple of four; L must be even and at least four. Tested arrays are 8×8, 12×12 and 20×20 (48, 108 and 300 spins). Invalid dimensions are rejected. Each site has four neighbors with reciprocal exchange `Jintra/2`, antisymmetric directed DMI of magnitude `Dsim/2`, and uniform onsite `Ksim`. Set `bc=1` only to select the retained legacy open model, whose receiver-dependent weights differ from this periodic model.
 
-**Larger-array relaxation check:** on open arrays with 16–336 occupied spins, the current nonreciprocal weights retain the six reference orientations, while an isolated reciprocal `J/2,D/2` bond variant reaches only two destinations (90°/270°). See the [six reference states and comparison plots](docs/six-state-relaxation.md). Excess b-sublattice sites give these finite reciprocal patches a twofold anisotropy contribution. The earlier [one-seed stationarity check](docs/spatial-relaxation.md) showed settling for both models, which is insufficient to establish six-state equivalence. The default 10 ps run is also too short for settling. Production defaults and spatial weights remain unchanged.
+Compute the unnormalized mean over **occupied** sites and its angle `atan2d(mean_y,mean_z)`. Equal a/b/c populations make this ordinary site mean equal to the balanced sublattice mean. The angle at an exactly compensated initial state is undefined.
 
-**Coordination-weighted anisotropy trial:** keeping reciprocal `J/2,D/2` and using $K_i=Kz_i/4$ restores all six stable reference states on those same five open arrays. Four-neighbor sites retain K; two-neighbor sites use K/2. All 96 relaxation, perturbation-recovery and refinement trajectories pass, with equal final energies to roundoff. See the [derivation, comparison figure and reproducible checks](docs/anisotropy-six-state.md). This is a tested diagnostic boundary model; physical evidence for this edge anisotropy is still missing. The six angles describe the balanced sublattice mean, not the site-weighted mean of the unbalanced patch. Production defaults remain unchanged.
+**Six-state relaxation:** periodic arrays with 48, 108 and 300 spins recover all six 30°:60°:330° mean-spin orientations with equal energies to numerical precision. All 78 control, relaxation, perturbation, recovery, angular-offset and timestep-refinement trajectories passed. See the [relaxation report](docs/periodic-six-state.md) and [interactive periodic cell/bond view](docs/periodic-cell.html). Production now implements this same graph directly.
 
-**Driven follow-up:** this candidate does **not** reproduce Figures 2, 4(a), and 5 as a set. On 16-, 130- and 336-spin patches, all 24 low-field cases per size select the field-aligned 90°/270° states instead of the paper's current-dependent destinations; Fig. 4(a)'s sustained z reversal and Fig. 5(a)'s sampled transition are absent. The +1000 Oe endpoint agrees for both current signs. The 300-trajectory comparison, convergence checks, external result paths and figure locations are documented in [the switching report](docs/anisotropy-switching.md). This is an isolated diagnostic; the production model remains unchanged.
+**Switching comparison:** all 48 PRB Figure 2, 4(a), and 5 reference cases pass at each periodic size. Ordinary site-mean trajectories agree with the numerical reference within 7.72e-12 per component. All 248 primary/control, refinement and perturbed-start runs pass; see the [comparison report](docs/periodic-prb2024.md). Perturbations were applied at t=0 and decay before the pulse, so this does not establish robustness to disturbances during switching.
 
-**Nonreciprocal follow-up:** the existing receiver-weighted exchange/DMI with uniform K matches all 48 reference figure cases on each of those three patches. Balanced-sublattice trajectories agree with the numerical reference within 7.72e-12 per component, including the 1.399 ns z reversal and 275–300 Oe sampled transition. Exact sublattice field sums explain this coherent reduction; the raw site-weighted magnetization differs because the patches have excess b sites. All 248 trajectories and the perturbed-start refinements pass. See [the results, derivation and rerun instructions](docs/nonreciprocal-switching.md). Long runs use the unchanged C++ diagnostic, checked against archived MATLAB/GPU fixtures and an independent CPU implementation; fresh MATLAB execution and plot rendering remain unavailable. This does not resolve the physical nonreciprocity or crystallographic mapping gaps.
+Earlier open-boundary comparisons remain documented in the [six-state study](docs/six-state-relaxation.md), [coordination-weighted anisotropy trial](docs/anisotropy-switching.md), and [nonreciprocal switching study](docs/nonreciprocal-switching.md). They describe different boundary/weight choices and are not the production default.
 
 The optional visualization block is disabled with `if(0)`. Enabling it requires an external `threedplott` function and a machine-specific path that are not included here. Plotting is not required for integration.
 
 ## Reproduction of the 2024 PRB figures
 
-With the three-sublattice reduction and matched material parameters, the current coupled RK4 code reproduces the Mn$_3$Sn switching behavior in **Figures 2, 4(a), and 5** of Xu et al., *Physical Review B* **109**, 134433 (2024), listed above. Each sublattice is represented by one unit spin in the verified 2×2 open array with three occupied sites. Figure 4(b), the ferromagnetic comparison, is excluded. This result applies to the three-sublattice reduction; the larger spatial model still requires the deferred exchange-weight correction.
+The periodic spatial model reproduces the tested switching behavior in **Figures 2, 4(a), and 5** of Xu et al., *Physical Review B* **109**, 134433 (2024). Every occupied spin evolves independently; uniform starts remain coherent because each site's summed exchange/DMI coupling to the other classes equals the verified three-spin reference. Figure 4(b)'s ferromagnetic comparison is excluded. Agreement with the numerical reference is quantitative; agreement with the published curves is qualitative, without digitizing or fitting them.
 
-The plots below use 5 fs steps over 5 ns, with current and field applied during 1–4 ns. They show the unnormalized mean of the three spins and its angle `atan2d(mean_y,mean_z)`. The evidence establishes numerical agreement with the verified `Mn3Sn_3atoms` implementation and qualitative agreement with the published switching curves; no digitized paper curves were fitted.
+The figures below come from the verified **periodic-boundary** simulations. They use 5 fs steps over 5 ns, with current and field applied during 1–4 ns. Angle panels show the 300-spin cell; size comparisons include 48, 108 and 300 spins. Dashed curves show the three-spin numerical reference. The default production preset uses the 48-spin cell with the same switching outcomes.
 
-Angle traces are unwrapped to remain continuous through ±180°, with axes covering the full trajectories. Each trace starts on its signed initial-angle branch; angles differing by 360° represent the same orientation (for example, +330° is −30°, and −330° is +30°). Final orientations quoted below are modulo 360°. Angle plots omit the first 0.05 ns of startup relaxation and mask mean-spin magnitudes below $10^{-10}$, where the angle is undefined; the component plot retains startup relaxation.
+Angles use `atan2d(mean_y,mean_z)` and are unwrapped continuously. Angles differing by 360° represent the same orientation. Angle traces omit t<0.05 ns and mask in-plane mean magnitudes below $10^{-10}$; component traces retain startup relaxation. No smoothing is applied.
 
-**Figure 2 — current/field polarity and initial-state dependence.** Panels (a–c) reach +30°, −150°, and −30°, respectively. With positive current and +100 Oe, all six initial states reach +30° in panel (d).
+**Figures 2, 4(a), and 5(a).** Current/field polarity selects the reference destinations from all six starts. The mean z component reverses from approximately −0.002997 to +0.002997, crossing zero at **1.399 ns**. The sampled field-dependent transition from +30° to +90° lies in **275 < H <= 300 Oe**. The bottom-right panel shows recovery from a small perturbation applied at t=0.
 
-![Three-sublattice reproduction of PRB 2024 Figure 2: switching angles for different current and field signs and six initial states](docs/coupled-rk4-fig2.png)
+![Periodic-boundary reproduction of PRB 2024 Figures 2, 4(a), and 5(a), including spatial-size and perturbation checks](docs/periodic-prb2024.png)
 
-**Figure 4(a) — Mn$_3$Sn magnetization reversal.** The mean z component reverses from approximately −0.002997 to +0.002997, crossing zero at 1.399 ns. Startup relaxation from the ideal 120-degree seed is retained.
+**Figures 5(b,c).** At +1000 Oe, all six initial states reach +90° for either current sign; −270° is the same orientation on an unwrapped branch.
 
-![Three-sublattice reproduction of PRB 2024 Figure 4(a): mean spin components during Mn3Sn reversal](docs/coupled-rk4-fig4a.png)
+![Periodic-boundary reproduction of PRB 2024 Figures 5(b,c): 300-spin trajectories for both current signs and six initial states](docs/periodic-prb2024-high-field.png)
 
-**Figure 5 — field dependence and high-field behavior.** The sampled transition from a +30° to a +90° final state lies between 275 and 300 Oe. At +1000 Oe, all six initial states reach +90° for either current sign.
-
-![Three-sublattice reproduction of PRB 2024 Figure 5: field sweep and high-field trajectories for both current signs](docs/coupled-rk4-fig5.png)
-
-Verification covers 48 physical cases and 192 full trajectories, including timestep refinement and reference comparisons. Full sweeps use the validated C++ diagnostic; short trajectories check the actual MATLAB/GPU production loop. The current native-parameter trajectories are bit-for-bit identical to those used for these plots. See the [parameter and protocol report](docs/reference-protocols.md) for reproduction commands, and the [figure verification report](docs/frozen-field-repair.md) for tolerances and the recorded strict per-spin comparison exception at 275 Oe.
+The 248-run comparison and saved-data plotting procedure are in the [periodic PRB report](docs/periodic-prb2024.md). Production promotion is checked separately against those exact model operators, fresh MATLAB/GPU trajectories, pulse/chunk timing and retained open controls in the [production verification report](docs/periodic-production.md). Historical three-spin plots and checks remain in the [earlier solver report](docs/frozen-field-repair.md).
 
 ## Files and data flow
 
@@ -126,33 +122,19 @@ The extraction preserves historical questions, differing coordinate conventions,
 
 ## Interactive structure and interactions
 
-Open either page directly in a modern browser; both work offline with their local companion files:
+Open these pages directly in a modern browser; all assets are local:
 
 | Page | What it shows |
 |---|---|
-| [Cell and array](docs/unit-cell.html) | Notebook-based triangular schematic, outlined repeating motifs, selectable Mn/empty entries, finite-patch repetition, exact array correspondence, initial spins and easy axes |
-| [Structure to interactions](docs/structure-exchange.html) | Selected receiver and neighbor reads linked across the schematic, array, coefficient table, and MATLAB source; exchange, signed DMI reads, onsite anisotropy, and both boundary flags |
+| [Periodic cell and interactions](docs/periodic-cell.html) | Production periodic graph: complete repeats, equal class counts, selected neighbors, wrapped images, reciprocal exchange and directed DMI |
+| [Open cell and array](docs/unit-cell.html) | Retained legacy open branch: notebook schematic, finite-patch termination, initial spins and easy axes |
+| [Open structure to interactions](docs/structure-exchange.html) | Retained legacy open weights and coefficient cuts; selected reads and unequal reverse exchange pairs |
 
-The geometry has arbitrary display spacing. The 4-row × 2-column outline represents a repeating code pattern, **not a verified crystallographic unit cell**. Physical lattice vectors, Sn positions, stacking, code-to-crystal labels, and physical DMI-vector assignments remain unresolved. The drawing follows notebook pages 19–20; spin arrows come from the current initializer and do not depict relaxed states.
+Display spacing is schematic. The 4-row × 2-column motif is a code repeat, not a verified crystallographic unit cell. Physical lattice vectors, Sn positions, stacking and shell assignments remain unresolved. The periodic viewer starts at the production default 8×8; select a spin or neighbor, switch exchange/DMI/onsite terms, change cell size, and pan/zoom/reset. Outlined markers represent periodic images of existing spins.
 
-The pages preserve the current receiver-dependent interaction weights and edge cuts. In the 5×6 open example there are 20 occupied entries, 30 exchange connections, and 12 pairs with unequal reverse weights. `bc=0` shows legacy wrapped reads with retained masks, not validated periodic topology. The table distinguishes active reads, coefficient cuts, open edges, empty sources, and empty receivers. Its coefficients for excluded reads are raw algebraic values, not physical contributions.
+Periodic data come from current-source MATLAB impulse measurements checked against an independently enumerated wrapped stencil. The open snapshots are exported and checked only with `bc=1`; they no longer advertise the former incomplete periodic mode. The 5×6 open example retains 20 occupied entries, 30 exchange connections and twelve pairs with unequal reverse weights.
 
-Select entries in either diagram or array; choose a neighbor row to highlight its path and source expressions. Drag to pan, use the zoom slider or `+`/`−`, and press `0` to reset the focused diagram. Cell repetition regenerates a finite patch with its termination rules. Links between the two pages retain the selected array and entry.
-
-The exchange explorer also shows [all unequal exchange pairs](docs/structure-exchange.html#unequal-exchange) together: numbered orange links correspond to a table with both source-to-receiver weights in units of `Jintra`. Node colors and labels show the receiving-site factor `hex_constant`, separately from the easy-axis class colors in the detailed view. Select a numbered link or table button to inspect that pair's individual read and source expression below. The overview follows the array and boundary controls and appears only for exchange. In the 5×6 open patch, all 12 highlighted pairs have weight `Jintra` into one endpoint and `Jintra/2` into the other; the remaining 18 connections have equal reverse weights. These are implemented field-sum coefficients, not validated reciprocal bond energies.
-
-The shared `docs/mn3sn-data.js` snapshot comes from a CPU-only MATLAB export/check harness. It includes source excerpts and SHA-256 hashes, masks, axes, initial spins, raw coefficients, and independently measured impulse responses. After relevant source changes, refresh it from the repository root:
-
-```bash
-matlab -batch "addpath('docs'); export_visualization_data('docs/mn3sn-data.js')"
-node docs/check_visualization_data.cjs
-node --check docs/mn3sn-model.js
-node --check docs/mn3sn-view.js
-```
-
-The exporter executes reviewed setup, shift, and static-field excerpts, with wall initialization and distribution I/O disabled. It does not call `main.m`, launch integration, select a GPU, or write simulation results. The command overwrites only the generated viewer snapshot. It checks ten sizes (5×5 plus all combinations of 5/9/13 rows and 6/10/14 columns), both boundary flags, and every occupied Cartesian spin impulse. It currently requires `DMIenable=1`, positive nonzero exchange/DMI/anisotropy coefficients, and the existing `musRE=3*mub` mapping; changes to these assumptions require reviewing the export scope. Node checks the display helpers against the measured operators and rejects stale source hashes. These tools need MATLAB and Node respectively; viewing the pages needs only a browser.
-
-Validation on 2026-10-21: MATLAB R2024b Update 1 static checks passed; Node matched 367,700 exchange/DMI operator entries and all source hashes. Chromium 151 checks exercised offline loading, selections, cross-page links, controls, and desktop/390 px layouts. These are visualization/source-consistency checks, not scientific validation of the existing interaction model. No dynamics or publication benchmark was run. Exact procedures and remaining evidence gaps are recorded in [plan.md](plan.md#visualization-task--2026-10-21).
+Refresh and verification commands are in [production verification](docs/periodic-production.md). The views illustrate the implemented graph and do not supply geometry to the solver.
 
 ## Current conventions and defaults
 
@@ -166,12 +148,12 @@ The implemented anisotropy is onsite uniaxial easy-axis anisotropy, with energy 
 
 | Quantity | Checked-in value | Meaning or caveat |
 |---|---|---|
-| Array dimensions | `natomW=5`, `natomL=5` | 25 slots, 16 occupied spins, 9 empty slots |
-| Boundaries | `bc=1` | Open neighbor shifts; `bc=0` requests periodic shifts but interaction masks still remove seam bonds |
+| Array dimensions | `natomW=8`, `natomL=8` | 64 slots, 48 occupied spins, 16 empty slots; all presets |
+| Boundaries | `bc=0` | Complete periodic seams; `bc=1` retains the legacy open branch |
 | Solver | `rk4=1` | Coupled stages with refreshed fields; deterministic three-site convergence verified |
-| Exchange | `Jintra=100.812*(3*mub)` J | 17.50806 meV, exactly matching the reference field coefficient before site scaling |
+| Exchange | `Jintra=100.812*(3*mub)` J | 17.50806 meV base coefficient; each periodic bond uses half |
 | Anisotropy | `Ksim=0.196 meV` | Onsite energy coefficient; field uses `2*Ksim/mu` |
-| DMI | `Dsim=0.833 meV` | Enabled, with site-dependent scaling and directed stencil signs |
+| DMI | `Dsim=0.833 meV` | Enabled; periodic bonds have magnitude Dsim/2 and antisymmetric directed signs |
 | Moment | `musRE=3*mub` | Per occupied Mn site |
 | Gamma | `gamRE=gam=1.760859644e11` rad/(s T) | Same constant as the reference |
 | Damping | `alp=0.003` | Dimensionless |
@@ -189,14 +171,14 @@ Field sums are flux densities in tesla despite variable names such as `Hext`, `h
 
 ## Output and known limitations
 
-`mmx`, `mmy`, and `mmz` contain the sampled spin components. At the defaults their shapes are `5 x 5 x 101`; figure presets produce `2 x 2 x 20001`. `atomtype_`, initial arrays, protocol, constants, intermediate fields, and other workspace variables are also saved. No versioned result schema or explicit code/hardware provenance is provided.
+`mmx`, `mmy`, and `mmz` contain the sampled spin components. At the defaults their shapes are `8 x 8 x 101`; figure presets produce `8 x 8 x 20001`. `atomtype_`, initial arrays, protocol, constants, intermediate fields, and other workspace variables are also saved. No versioned result schema or explicit code/hardware provenance is provided.
 
 The saved `t` vector is in seconds and corresponds exactly to the sampled states. Each block stores its initial state plus every update. Shared block boundaries are saved once, and both t=0 and the requested final state are included. `saved_steps` and `actual_updates` record the physical update counts. This corrects the previous default's 19,990 updates (9.995 ps) and drifting labels; old MAT files retain their old timing convention.
 
 The most consequential audit findings are:
 
 - The frozen-field RK4 defect is repaired: `rk4=1` recomputes fields from the complete lattice at each stage and normalizes only the final occupied spins. See the [repair and figure checks](docs/frozen-field-repair.md). This does not validate optional thermal, dipole, or fixed-edge paths; pinned spins still evolve temporarily inside stages before the legacy final pinning.
-- Site-dependent exchange weights are not reciprocal on some default-lattice bonds, preventing identification with a conventional symmetric pair Hamiltonian.
+- Periodic exchange is reciprocal and DMI antisymmetric. The retained legacy open branch still has nonreciprocal receiver weights.
 - Material coefficients now match the three-spin reference. Larger-lattice pair normalization and physical geometry remain unresolved; parameter matching does not resolve them.
 - Heun generates NaNs at empty slots. Predictor-corrector startup passes an obsolete argument list. Torque flags and alternative solver guards are incomplete.
 - Dipole mode 1 returns different variable names from those consumed by integration; mode 2 is explicitly marked suspect; mode 3 uses the $y$ spin component for the $z$ moment.
@@ -206,11 +188,11 @@ The most consequential audit findings are:
 
 ## Audit verification
 
-The [frozen-field repair](docs/frozen-field-repair.md) promotes coupled field evaluation into the production RK4 path and checks Figures 2, 4(a), and 5 against `Mn3Sn_3atoms`, excluding the ferromagnet. The subsequent [parameter/protocol alignment](docs/reference-protocols.md) makes those material conventions native and adds exact production pulse/output timing. The default 5×5 example remains an undriven spatial calculation; select a figure preset for the three-spin reduction.
+The [frozen-field repair](docs/frozen-field-repair.md) promotes coupled field evaluation into the production RK4 path and checks Figures 2, 4(a), and 5 against `Mn3Sn_3atoms`, excluding the ferromagnet. The subsequent [parameter/protocol alignment](docs/reference-protocols.md) makes those material conventions native and adds exact production pulse/output timing. The default 8×8 periodic example remains an undriven spatial calculation; select a figure preset for periodic switching. The earlier three-spin open reduction remains a verification control.
 
 The earlier [2026-11-02 three-spin comparison](docs/three-spin-comparison.md) records the pre-repair behavior. Its 342 diagnostic runs showed that matched frozen fields at 0.5 fs give the wrong 275 Oe destination. That historical audit did not change production source; the subsequent repair above does. Larger-lattice interaction and geometry findings remain open.
 
-On 2026-10-14, MATLAB R2024b Update 1 and an NVIDIA GeForce RTX 3060 Laptop GPU were available. A temporary two-block GPU probe used six allocated states per block and saved every two indices. Its six saved frames were finite, occupied spins had zero measured norm error, and empty slots remained zero. It confirmed 10 actual updates against 12 nominal updates. CPU probes reproduced the Heun empty-slot failure, obsolete RK4 startup call, and missing dipole-mode-1 field outputs. An effective exchange matrix reconstructed from the current stencils had 24 directed mismatches (12 unordered bonds), with maximum normalized asymmetry 0.5. MATLAB Code Analyzer returned 18 messages across the nine source files; these are diagnostics, not a physics-validation result.
+On 2026-10-14, MATLAB R2024b Update 1 and an NVIDIA GeForce RTX 3060 Laptop GPU were available. A temporary two-block GPU probe used six allocated states per block and saved every two indices. Its six saved frames were finite, occupied spins had zero measured norm error, and empty slots remained zero. It confirmed 10 actual updates against 12 nominal updates. CPU probes reproduced the Heun empty-slot failure, obsolete RK4 startup call, and missing dipole-mode-1 field outputs. An effective exchange matrix reconstructed from the then-current open stencils had 24 directed mismatches (12 unordered bonds), with maximum normalized asymmetry 0.5. MATLAB Code Analyzer returned 18 messages across the nine source files; these are diagnostics, not a physics-validation result.
 
 The October audit did not validate production-length simulations, convergence order, stochastic dynamics, energy derivatives, or published results. Later three-site and solver checks are recorded separately above. [plan.md](plan.md) records the staged work and remaining limitations.
 

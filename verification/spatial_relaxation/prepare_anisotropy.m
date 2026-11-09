@@ -9,7 +9,7 @@ for q=1:numel(files)
  tag=erase(files(q).name,'.model');dims=sscanf(tag,'%dx%d');
  natomW=dims(1);natomL=dims(2);natom=natomW*natomL;
  dwcalc=0;load_fixed_atom_distrib=0;save_fixed_atom_distrib=0;initial_theta_deg=121;
- systemgeneration;occ=find(atomtype_==1);N=numel(occ);bc=1;
+ bc=1;systemgeneration;occ=find(atomtype_==1);N=numel(occ);
  data=load(fullfile(source,[tag '-static.mat']));
  axes=[coeffs_1(occ) coeffs_2(occ) coeffs_3(occ)];
  assert(isequal(occ,data.occ) && isequal(axes,data.axes));

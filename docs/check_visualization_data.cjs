@@ -26,6 +26,7 @@ for(const s of data.snapshots) {
     }
   }
   for(const probe of s.probes) {
+    assert.equal(probe.bc,1);
     const expected=new Map(probe.operator.map(row=>[row[0]+':'+row[1],row.slice(2)]));
     const actual=[new Float64Array(n*n),new Float64Array(n*n)];
     for(const [t,term] of ['exchange','dmi'].entries())for(let i=0;i<n;i++) {
@@ -67,9 +68,9 @@ for(const s of data.snapshots) {
     }
   }
 }
-assert(activeWraps>0&&emptySources>0&&emptyReceivers>0&&cuts>0&&openEdges>0,'Missing boundary/status coverage');
+assert(activeWraps===0&&emptySources>0&&emptyReceivers>0&&cuts>0&&openEdges>0,'Missing boundary/status coverage');
 const notebook=M.snapshot(5,6),open=notebook.probes.find(p=>p.bc===1);
 assert.equal(notebook.occupancy.filter(x=>x===1).length,20);
 assert.equal(open.exchangePairs,30);assert.equal(open.unequalPairs,12);
-console.log('PASS: source hashes/excerpts, '+data.snapshots.length+' sizes × 2 boundaries, '+comparisons+' operator entries against independent MATLAB impulses.');
+console.log('PASS: source hashes/excerpts, '+data.snapshots.length+' sizes × open boundary, '+comparisons+' operator entries against independent MATLAB impulses.');
 console.log({activeWraps,emptySources,emptyReceivers,cuts,openEdges});
