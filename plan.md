@@ -1,15 +1,13 @@
 # Mn3Sn pending work
 
-This file tracks unresolved work and the scope/checks needed before implementation.
-Current behavior belongs in [README.md](README.md); completed investigations and
-validation belong in the reports under `docs/`. Listing an item here does not
-approve its implementation. No implementation task is currently in progress.
+CQ-01–04 adoption is complete within the approved deterministic scope. The
+[implementation and validation report](docs/configuration-results.md) records the
+configuration/result interface, unchanged accepted baselines, exact comparisons,
+scientific checks, provenance and limitations. Browser rendering and multi-GPU
+behavior were not verified. No commit or push was made. The approved detailed
+plan is preserved with the external validation artifacts named in that report.
 
-The approved deterministic benchmark is complete: quick/current suites, protected
-external baselines, full-trajectory comparisons and timing evidence are documented
-in [docs/benchmark.md](docs/benchmark.md). Production physics and source are unchanged.
-
-## Remaining work
+## Pending backlog
 
 These items summarize existing limitations, not new feature commitments. Select
 and scope the relevant item before starting substantial source changes.
@@ -18,9 +16,9 @@ and scope the relevant item before starting substantial source changes.
 |---|---|---|
 | Physical geometry and interaction mapping | Source the lattice/basis, crystallographic labels, exchange-shell normalization, directed DMI and physical edge termination. Periodic code-graph verification does not establish this mapping. | Reconcile the sourced Hamiltonian with bonds and field derivatives; verify topology, seams and energy gradients. Unsupported physical details remain **REFERENCE MISSING**. |
 | Legacy open-boundary model | Resolve the physical justification of receiver-dependent exchange/DMI weights. Periodic production is already reciprocal; the legacy open branch remains a separate issue. | Agree the intended open model before changing weights; check reciprocal bonds, field/energy consistency and edge/size dependence. See [A02 evidence](A02-Nonreciprocal_exchange.md). |
-| Solver selection and torque flags | Heun and predictor-corrector remain defective; early rejection is still proposed. Independent FL/DL and STT flag behavior and guards need scoped validation. | Exercise selected/rejected paths, vacancies and flag combinations; preserve the explicit Gilbert damping cross terms. Restoring another solver requires separate convergence checks. |
+| Solver and torque restoration | Heun and predictor-corrector remain defective. The public API now rejects them; independent FL/DL and STT restoration remains separate work. | Restoring support requires selected-path, vacancy, flag and convergence checks; preserve explicit Gilbert damping cross terms. |
 | Optional paths | Thermal noise, dipoles, pinning, loaded distributions, restart and domain-wall initialization remain unvalidated. | Scope each requested path separately, including its physical conventions, occupied-spin/vacancy invariants and output contract. Domain walls require sourced sublattice states and physical coordinates. |
-| Production results workflow | The production entry point still writes fixed-name full-workspace output; no production output-path override or CI exists. The separate benchmark now has versioned results, safe external paths and accepted deterministic baselines. | Scope any production-output change separately; preserve historical data and compatibility. See [benchmark evidence](docs/benchmark.md). |
+| CI | No CI exists. The local validated configuration/output API is implemented. | Scope CI separately; do not infer that local GPU checks are portable automated coverage. |
 | Performance | Repeated transfers and workspace storage remain candidates for profiling. | Profile an agreed representative case first; any optimization must preserve fields, trajectories, clocks and vacancy handling. |
 
 Additional publication studies (orientation scans, domain-wall motion or octupole
@@ -29,10 +27,9 @@ switching comparisons do not establish those capabilities.
 
 ## Completed work: reports only
 
-The visualization, frozen-field RK4 repair, parameter alignment, physical clock
-repair and periodic production promotion are complete within their documented
-scope. They are not pending tasks.
+The following work is complete within each report's documented scope. It is not pending work.
 
+- [CQ-01–04 configuration, production results and protected output](docs/configuration-results.md)
 - [Deterministic regression and timing benchmark](docs/benchmark.md)
 - [Structure viewers and usage](README.md#interactive-structure-and-interactions)
 - [Coupled RK4 repair and figure checks](docs/frozen-field-repair.md)
@@ -40,10 +37,3 @@ scope. They are not pending tasks.
 - [Periodic six-state relaxation](docs/periodic-six-state.md), [switching comparison](docs/periodic-prb2024.md), and [production verification](docs/periodic-production.md)
 - [Model variants and earlier open-boundary studies](README.md#model-variants-exchange-anisotropy-and-boundaries)
 - [Archived audit, source locators and completed task plans](docs/audit-history.md)
-
-## Keeping this plan short
-
-For the next approved task, add only its goal, scope, implementation steps and
-acceptance checks. Once complete, put the findings and validation in the relevant
-`docs/` report and remove the detailed task plan from this file. Keep durable
-agent rules in `AGENTS.md` and user-facing behavior in `README.md`.

@@ -1,6 +1,6 @@
 function check_benchmark(baseline_root,out)
 %CHECK_BENCHMARK Comparator mutation tests; no GPU or production rerun.
-assert(~isfolder(out) && ~isfile(out),'Use a fresh test directory.');mkdir(out);
+out=mn3sn_prepare_output(out,baseline_root);
 assert(compare_to_baseline(baseline_root,baseline_root),'Baseline self comparison failed.');
 cases={'relaxation','driven_nonuniform'};
 base_meta=jsondecode(fileread(fullfile(baseline_root,'metadata.json')));
@@ -71,6 +71,27 @@ assert(rejected && strcmp(old,fileread(fullfile(baseline_root,'metadata.json')))
 root=fileparts(fileparts(mfilename('fullpath')));rejected=false;
 try,run_baseline_benchmark(base_meta.mode,fullfile(root,'benchmark','forbidden-output'));catch,rejected=true;end
 assert(rejected && ~isfolder(fullfile(root,'benchmark','forbidden-output')));
+% New destinations within either registered or explicit baseline must fail.
+for target={fullfile(baseline_root,'new-candidate'), ...
+        fullfile(baseline_root,'unused','..','alias-candidate')}
+    rejected=false;
+    try,run_baseline_benchmark(base_meta.mode,target{1},baseline_root);
+    catch err,rejected=strcmp(err.identifier,'Mn3Sn:ProtectedBaseline');end
+    assert(rejected && ~isfolder(target{1}));
+end
+missing=fullfile(out,'missing-input');target=fullfile(out,'missing-input-output');rejected=false;
+try,run_baseline_benchmark(base_meta.mode,target,missing);catch,rejected=true;end
+assert(rejected && ~isfolder(target));
+% Missing-manifest failure is exercised in a copy, never by moving the reference.
+copy=fullfile(out,'missing-manifest-source');mkdir(copy);mkdir(fullfile(copy,'benchmark'));
+copyfile(fullfile(root,'benchmark','run_baseline_benchmark.m'),fullfile(copy,'benchmark'));
+oldpath=path;oldpwd=pwd;context=onCleanup(@() restore_context(oldpwd,oldpath));
+cd(copy);addpath(fullfile(copy,'benchmark'),'-begin');
+target=fullfile(out,'missing-manifest-output');rejected=false;
+try,run_baseline_benchmark(base_meta.mode,target);
+catch err,rejected=strcmp(err.identifier,'Mn3Sn:MissingBaseline');end
+assert(rejected && ~isfolder(target));
+cd(oldpwd);path(oldpath);clear context;
 files=dir(fullfile(root,'benchmark','*.m'));issues=struct;
 for k=1:numel(files)
     messages=checkcode(fullfile(files(k).folder,files(k).name),'-id');
@@ -79,9 +100,14 @@ for k=1:numel(files)
 end
 summary=struct('passed',true,'mutation_rejections',numel(mutations), ...
     'invalid_baseline_rejected',true,'source_change_allowed',true, ...
-    'invalid_timing_excluded',true,'path_guards_passed',true,'checkcode',issues);
+    'invalid_timing_excluded',true,'path_guards_passed',true, ...
+    'missing_references_rejected',true,'baseline_subtrees_protected',true,'checkcode',issues);
 write_json(fullfile(out,'checks.json'),summary);
 fprintf('PASS benchmark checks: %d mutations, invalid baseline, timing/source policy, safe paths.\n',numel(mutations));
+end
+
+function restore_context(folder,oldpath)
+cd(folder);path(oldpath);
 end
 
 function write_json(file,value)

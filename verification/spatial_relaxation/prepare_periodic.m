@@ -16,7 +16,8 @@ for q=1:size(sizes,1)
  bc=double(q==1); % Open three-spin control; periodic cells use production directly.
  eval(generation);integration_source=src;
  occ=find(atomtype_==1);N=numel(occ);tag=sprintf('%dx%d',natomW,natomL);
- Jintra=100.812*(3*mub);Ksim=.196e-3*ele;Dsim=.833e-3*ele;musRE=3*mub;gamRE=gam;alp=.003;
+ cfg=mn3sn_default_config;
+ Jintra=cfg.Jintra;Ksim=cfg.Ksim;Dsim=cfg.Dsim;musRE=cfg.musRE;gamRE=cfg.gamRE;alp=cfg.alp;
  names={'nextL','previousL','nextW','previousW','previousWleft','previousWright','nextWleft','nextWright'};
  for k=1:8,eval(['Asim' names{k} '=zeros(natomW,natomL);']);end
  eval(extract(integration_source,'AsimnextL(2:2:natomW,:)=Jintra;','for ctL=1:natomL'));

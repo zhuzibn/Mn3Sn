@@ -1,5 +1,11 @@
 # Deterministic benchmark validation — 2026-11-19
 
+This report records the initial benchmark implementation. The later
+[configuration/result migration](configuration-results.md) replaces `main.m`
+text extraction with the callable production API while preserving these accepted
+artifacts, comparator and thresholds. Use [benchmark/README.md](../benchmark/README.md)
+for current commands and missing-reference behavior.
+
 The new benchmark freezes the existing periodic Mn3Sn software behavior and
 compares future full saved trajectories and GPU timings. Its runner, comparison
 and failure tests are under `benchmark/`; usage and the result contract are in
@@ -23,7 +29,7 @@ Vacancies stay zero, occupied spins have unit length, and ordinary/class means
 exclude vacancies. The retained relaxation gate has 20,000 active updates with
 zero drive amplitude. No stochastic path, dipole, pinning or open-edge case is used.
 
-Initialization comes from guarded extraction of current `main.m` before its
+In this initial implementation, initialization came from guarded extraction of `main.m` before its
 visualization/integration/save tail. Production initialization and integration
 execute in a fresh external source snapshot. Checks fail if expected anchors or
 supported option assignments change. The runner has no duplicated material-default

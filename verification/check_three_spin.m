@@ -83,15 +83,9 @@ end
 
 function p=parameters(folder)
 original=pwd; cleanup=onCleanup(@() cd(original)); cd(folder);
-constantfile;
-src=fileread('main.m');
-names={'Jintra','Ksim','Dsim','gamRE','msRE','tz','alp','thetaSH'};
-for i=1:numel(names)
-    token=regexp(src,['(?m)^\s*' names{i} '=([^;]+);'],'tokens','once');
-    % Allow assignments following another assignment on the same line.
-    if isempty(token), token=regexp(src,[';' names{i} '=([^;]+);'],'tokens','once'); end
-    assert(~isempty(token),'Missing source assignment: %s',names{i}); eval([names{i} '=' token{1} ';']);
-end
+state=mn3sn_initialize(mn3sn_default_config);
+names=fieldnames(state.config);
+for i=1:numel(names),eval([names{i} '=state.config.(names{i});']);end
 p=struct('mu',3*mub,'J',Jintra,'D',Dsim,'Kfield',2*Ksim, ...
     'gamma',gamRE,'alpha',alp,'Ms',msRE, ...
     'thickness',tz,'b',hbar/2*thetaSH*5e10/(msRE*tz));

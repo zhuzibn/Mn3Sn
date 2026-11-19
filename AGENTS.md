@@ -21,13 +21,12 @@ Use the installed `spin-dynamics-development` skill for physics, field, torque, 
 
 ## Entry points and execution
 
-- Run from the repository root. `main.m`, `constantfile.m`, `systemgeneration.m`, `distrib.m`, `integrate_llg.m`, and `dipole_calc.m` share script workspace state.
-- `main.m` clears the workspace, selects GPU device 1, runs integration, and saves the complete workspace to `finalnew.mat`.
-- MATLAB with Parallel Computing Toolbox and a supported NVIDIA GPU is required. `normrnd` additionally requires Statistics and Machine Learning Toolbox when thermal noise is enabled.
+- `main.m` calls `mn3sn_default_config` and `mn3sn_run`; numerical defaults and GPU index 1 are preserved. Configure runs through `cfg`, with one authoritative `cfg.protocol` struct. Do not reintroduce workspace overrides or parse `main.m` for parameters.
+- `mn3sn_initialize` supplies CPU initialization and derived coefficients; `mn3sn_run` supplies function-local state to the unchanged scripts. Bind helpers to their source tree and restore caller cwd/path/RNG. Reuse an already-selected matching GPU without resetting its arrays.
+- MATLAB with Parallel Computing Toolbox and a supported NVIDIA GPU is required. Thermal noise is rejected by the supported API.
 - Do not assume Octave compatibility or a CPU simulation backend.
-- Production command: `matlab -batch "run('main.m')"`. It overwrites `finalnew.mat`; preserve existing data and obtain authorization for overwriting user results.
-- There is currently no production output-path override, restart loader, or CI workflow. Select `mn3sn_protocol` inside `main.m` for relaxation or a periodic figure case. See `docs/reference-protocols.md` for parameter and clock checks and `docs/frozen-field-repair.md` for the earlier integrator evidence.
-- The disabled visualization block uses an external `threedplott` function and a machine-specific path. Do not enable or port it unless requested.
+- Production command: `matlab -batch "run('main.m')"`. It creates a fresh external directory and saves only `result` in `result.mat`. `mn3sn_run(cfg,out)` selects a fresh destination; explicit `''` or `[]` is in-memory only. There is no overwrite option, restart loader or CI workflow.
+- Preserve the versioned production schema, raw arrays/invariants, requested/effective settings, mapping, actual pulse indices and source bytes/hashes. Git HEAD alone is insufficient provenance; snapshots must not inherit a parent repository's identity. See `docs/configuration-results.md` for the interface and checks, `docs/reference-protocols.md` for clocks and `docs/frozen-field-repair.md` for integrator evidence.
 
 ## Scientific conventions to preserve
 
@@ -48,9 +47,9 @@ Use the installed `spin-dynamics-development` skill for physics, field, torque, 
 
 `rk4=1` is the default coupled RK4 path. Recompute fields from the complete unnormalized lattice at each stage through `integrate_llg.m`, evaluate the explicit derivative with `atom_llgs_rhs.m`, and normalize occupied spins only after combining stages. `atomgpurk4.m` is retained as a historical frozen-field kernel, not the active RK4 step. Keep the production GPU replay and coupled-convergence checks in `verification/check_coupled_rk4.m` passing when modifying stages. Validation is restricted to deterministic, unpinned, dipole-free cases; periodic seam/topology checks are in `verification/spatial_relaxation/prepare_periodic.m` and `periodic_six_states.py`, with driven production checks in `verification/check_periodic_production.m`. Their code-graph verification does not certify crystallographic topology.
 
-Heun (`rk4=0`) and predictor-corrector (`rk4=2`) are legacy paths with known defects. Do not use them for production or restore support without scoped tests. Early rejection is a proposed improvement, not behavior already implemented.
+Heun (`rk4=0`) and predictor-corrector (`rk4=2`) are legacy paths with known defects and are rejected by configuration validation. Do not restore support without scoped tests.
 
-Treat thermal noise, dipole modes 1–3, fixed edges, loaded distributions, `loadstartm`, and `dwcalc` as unvalidated options. Any work on them must exercise the selected branch, its interaction with empty slots, and its output contract. Keep stochastic conventions separate from deterministic RK4 fixes.
+The public API also rejects FL SOT, STT, thermal noise, dipoles, fixed edges, distribution I/O, `loadstartm` and `dwcalc`. Their source remains unvalidated. Any restoration must exercise the selected branch, its interaction with empty slots, flags and output contract. Supported DMI/DL SOT on/off settings must reach the actual coefficients. Keep stochastic conventions separate from deterministic RK4 fixes.
 
 ## Benchmark ownership
 
@@ -58,15 +57,15 @@ Treat thermal noise, dipole modes 1–3, fixed edges, loaded distributions, `loa
 - Read `benchmark/README.md` before running or modifying the benchmark. Use a fresh external output directory. The runner loads frozen inputs from the manifest's baseline by default; an explicit third argument selects another baseline directory.
 - Run timing suites sequentially without competing GPU work. After an unexpected WSL launcher exit, check Windows MATLAB processes and output completion before retrying.
 - Treat `benchmark/baseline_manifest.json` and its external baseline artifacts as accepted regression data. Do not regenerate or promote baselines as a side effect of code changes; obtain explicit authorization for replacement.
-- Raw baseline data are external and are not included in a Git clone. Missing baseline artifacts are a reported limitation, not permission to bootstrap replacements.
+- Raw baseline data are external and are not included in a Git clone. Missing baseline artifacts/manifest fail ordinary candidate runs; they are not permission to bootstrap replacements. Only an explicitly authorized baseline-generation run may use an empty third argument.
 - Preserve full-trajectory comparison, exact configuration/clock checks, zero vacancies, occupied norms and safe-path guards. Use `benchmark/check_benchmark.m` for changes to the benchmark itself. Existing scientific checks remain required for physics or solver changes.
 
 ## Validation and result protection
 
-- Save new simulation data, MATLAB logs and generated simulation figures outside OneDrive. Default to `D:\Git_control\spin_dynamics\simulation_results\Mn3Sn` (`/mnt/d/Git_control/spin_dynamics/simulation_results/Mn3Sn` in WSL), with a fresh directory per run. Keep source and written reports in this repository. For unmodified `main.m`, use an isolated source copy in the external run directory because its save path is fixed. Preserve historical datasets unless their relocation is explicitly requested.
+- Save new simulation data, MATLAB logs and generated simulation figures outside OneDrive. Default to `D:\Git_control\spin_dynamics\simulation_results\Mn3Sn` (`/mnt/d/Git_control/spin_dynamics/simulation_results/Mn3Sn` in WSL), with a fresh directory per run. Keep source and written reports in this repository. Preserve historical datasets unless their relocation is explicitly requested.
 - Use the narrowest checks appropriate to the requested work. Deterministic regression baselines are registered in `benchmark/baseline_manifest.json`; see `benchmark/README.md` and `docs/benchmark.md`.
 - Preserve historical results before establishing a baseline. A record of legacy behavior is not proof of physical correctness.
-- Candidate runs must avoid overwriting `finalnew.mat`, `atomtypee.mat`, and external result files. The current script has no built-in safe output selection, so use an explicitly reviewed temporary harness or isolated copy for audit runs.
+- Production, the benchmark runner, `check_benchmark` and `check_production_interface` use `mn3sn_prepare_output` to claim fresh directories, reject source/OneDrive/existing destinations and protect registered/selected baseline subtrees before integration. A missing manifest blocks ordinary persistence; a source copy can run in memory. Preserve `finalnew.mat`, `atomtypee.mat` and all historical results. Other scientific/study harnesses write into prepared fixture directories and still require an explicitly reviewed fresh external destination.
 - Check shapes, finite occupied spins, occupied norms, exact zero empty slots, sublattice mapping, actual update counts, and alignment of saved states with physical times.
 - Each block includes its initial state plus every update. Save shared boundaries once, include t=0 and the final state, and derive `t` from `saved_steps*tstep`. Pulse gates use zero-based completed updates, on-inclusive/off-exclusive, held constant across RK stages. Keep `verification/check_protocols.m` passing for changes to protocols or time accounting.
 - For field changes, check reciprocal exchange weights, antisymmetric DMI bonds, term-level analytical limits, and energy-gradient consistency on small deterministic lattices.

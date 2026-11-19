@@ -1,10 +1,10 @@
 # Periodic production model
 
-Production now implements the previously verified periodic graph directly. `main.m` selects `bc=0`; every `mn3sn_protocol` preset uses 8×8 slots with 48 spins, sixteen in each easy-axis class. Periodic dimensions require W>=4 divisible by four and even L>=4. The retained `bc=1` branch preserves its old terminal cuts and receiver weights.
+Production implements the previously verified periodic graph directly. The default configuration selects `bc=0`; every `mn3sn_protocol` preset uses 8×8 slots with 48 spins, sixteen in each easy-axis class. Periodic dimensions require W>=4 divisible by four and even L>=4. The retained `bc=1` branch preserves its old terminal cuts and receiver weights.
 
 The change restores both periodic seams, retains all sites in the complete repeating motif and uses uniform exchange/DMI factors of one half. Thus each included bond has exchange `Jintra/2` and directed DMI magnitude `Dsim/2`; uniform onsite `Ksim` is unchanged. Every spin evolves independently under the existing coupled RK4 and explicit LLGS derivative. This is the approved mathematical code graph, with physical crystallographic mapping and exchange-shell normalization still unresolved.
 
-All material constants, seed conventions, pulse gates and time grids are unchanged. The default relaxation remains a short 10 ps example at 0.5 fs, saving 101 frames with shape `8 x 8 x 101`; it does not establish complete relaxation. Figure presets run 5 ns at 5 fs and save `8 x 8 x 20001`. Historical MAT files and `main.m`'s fixed `finalnew.mat` output behavior are unchanged. Run source copies in fresh external directories to protect results.
+All material constants, seed conventions, pulse gates and time grids are unchanged. The default relaxation remains a short 10 ps example at 0.5 fs, saving 101 frames with shape `8 x 8 x 101`; it does not establish complete relaxation. Figure presets run 5 ns at 5 fs and save `8 x 8 x 20001`. The 2026-11-09 promotion retained the then-current `finalnew.mat` save. The subsequent [2026-11-19 configuration/result migration](configuration-results.md) replaces it with protected fresh-directory `result.mat` output and reruns the focused checks below; historical MAT files remain untouched.
 
 ## Production verification
 

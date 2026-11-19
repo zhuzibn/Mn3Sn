@@ -18,8 +18,8 @@ The 2024 switching paper uses a three-sublattice macrospin model. The 2025 domai
 ## Requirements and running
 
 - MATLAB with Parallel Computing Toolbox and a MATLAB-supported NVIDIA GPU.
-- Statistics and Machine Learning Toolbox if `thermalenable=1`, because the code calls `normrnd`.
-- Run from this repository's root. Scripts share the MATLAB workspace; `main.m` starts with `clear all`, selects GPU device 1, and closes figures.
+- The supported API is deterministic coupled RK4; thermal noise and other unvalidated options are rejected before integration.
+- Run the commands below from this repository's root, or add the root to the MATLAB path. Default GPU device: 1.
 - GNU Octave and a CPU-only simulation path are not supported by the current implementation.
 
 From MATLAB:
@@ -34,9 +34,17 @@ From a shell with MATLAB on `PATH`:
 matlab -batch "run('main.m')"
 ```
 
-**Output:** `main.m` saves the entire workspace into `finalnew.mat` in the current directory, overwriting a file of that name. Preserve existing results before running. There is no implemented output-path option or restart reader. Select a protocol inside `main.m`; setting workspace variables before running it does not override its defaults.
+`main.m` is a small caller that leaves `cfg` and `result` in the workspace. Use the callable interface to select a protocol or change inputs:
 
-Save new simulation results, MATLAB logs and generated simulation figures outside OneDrive, under a fresh directory in `D:\Git_control\spin_dynamics\simulation_results\Mn3Sn` (WSL: `/mnt/d/Git_control/spin_dynamics/simulation_results/Mn3Sn`). For `main.m`, copy the root `.m` files into that external directory and run from the copy. Verification harnesses with explicit output arguments should receive the external path. Historical datasets are retained at their recorded locations.
+```matlab
+cfg=mn3sn_default_config('fig4a');
+cfg.protocol.natomW=8;
+result=mn3sn_run(cfg,'D:/Git_control/spin_dynamics/simulation_results/Mn3Sn/my-fig4a-run');
+```
+
+**Output:** omitting the destination allocates a fresh `run-*` directory under `D:\Git_control\spin_dynamics\simulation_results\Mn3Sn` for this checkout. The single saved variable is `result` in `result.mat`. An explicit empty destination (`''` or `[]`) returns the result in memory without saving. Relative destinations resolve from the caller's directory. Existing files/directories, this source tree, OneDrive, and registered baseline trees are rejected before integration. The baseline manifest must be present for saved runs; baseline MAT files are needed only for regression comparisons.
+
+Keep new data, MATLAB logs and generated figures outside OneDrive, in fresh directories. There is no restart reader. Historical `finalnew.mat` files remain untouched; consumers of their top-level variables must migrate to `result.mmx`, `result.atomtype`, `result.config`, etc. See the [configuration/result contract and validation](docs/configuration-results.md). Numerical defaults are unchanged.
 
 ## Regression and timing benchmark
 
@@ -72,7 +80,7 @@ The variants below evolve individual fixed-length spins with the same coupled LL
 | **Reciprocal open model with uniform anisotropy — diagnostic baseline** | Open patch; reciprocal $J/2$ bonds and antisymmetric directed DMI of magnitude $D/2$ | Uniform $K_i=K$ | Only two stable destinations, 90° and 270°, on the tested spatial patches; fails the six-state criterion. [Six-state baseline](docs/six-state-relaxation.md). |
 | **Reciprocal open model with nonuniform anisotropy — diagnostic trial** | Same open graph and $J/2,D/2$ bonds as the preceding baseline | $K_i=Kz_i/4$: $K/2$ at two-neighbor sites and $K$ at four-neighbor sites | Restores six equal-energy stable states, but fails the low-field switching destinations, sustained z reversal and sampled field transition. High-field final angles agree. [Relaxation](docs/anisotropy-six-state.md), [switching](docs/anisotropy-switching.md). |
 
-In `main.m`, `bc=0` and `bc=1` select the first two rows, respectively. The reciprocal open variants are isolated studies under `verification/spatial_relaxation/`; follow their linked reports to reproduce them. Setting `bc=1` alone does not select either reciprocal open variant. The nonuniform-anisotropy trial uses the diagnostic's `triangle` mode and an array-valued `Ksim`.
+Set `cfg.bc=0` or `cfg.bc=1` to select the first two rows, respectively. The reciprocal open variants are isolated studies under `verification/spatial_relaxation/`; follow their linked reports to reproduce them. Setting `bc=1` alone does not select either reciprocal open variant. The nonuniform-anisotropy trial uses the diagnostic's `triangle` mode and an array-valued `Ksim`; the production configuration accepts scalar `Ksim` only.
 
 The observable matters: the balanced mean is $(\overline{\mathbf m}_a+\overline{\mathbf m}_b+\overline{\mathbf m}_c)/3$, whereas the ordinary site mean is $N^{-1}\sum_i\mathbf m_i$. Neither is normalized. The tested open patches have excess b sites, so these means differ; complete periodic cells have equal a/b/c populations, making them equal. The periodic and legacy nonreciprocal operators both preserve the reference coherent subspace through matching per-sublattice field sums. This explains their agreement under the tested uniform drives, despite their different bond rules.
 
@@ -80,7 +88,7 @@ These results summarize the recorded deterministic checks, not new simulations. 
 
 ## Relaxation and paper protocols
 
-Edit the `protocol=mn3sn_protocol(...)` line near the top of `main.m`. The default is `mn3sn_protocol('relaxation')`. For a new figure run, use a separate copy of the root `.m` files and edit/run its `main.m` to preserve existing results. Each preset runs one trajectory.
+Select a preset with `cfg=mn3sn_default_config(name,value)`, then pass `cfg` to `mn3sn_run`. The optional value has the same meaning as in `mn3sn_protocol` below. The default is `'relaxation'`; each preset runs one trajectory. Edit `cfg.protocol` for explicit size, drive or timing overrides. Protocol names must match exactly.
 
 | Selection | First-spin seed | Current (A/m²) | Field along y |
 |---|---:|---:|---:|
@@ -98,7 +106,7 @@ Choose `seed` from `30:60:330` degrees (default 210), and Fig. 5(a) `field` from
 
 All presets use **8×8 slots, 48 occupied spins**, with periodic boundaries in both array directions. Relaxation retains its 10 ps runtime, 0.5 fs steps and 100 fs sampling; this short default is a smoke example, not enough to establish settling. Figure presets use 5 ns runtime, 5 fs steps and 0.25 ps sampling. Current and field are on for updates beginning in `[1 ns,4 ns)` and off otherwise. Initial ideal 120-degree seeds retain startup ringing.
 
-For another periodic size, set `protocol.natomW` and `protocol.natomL` immediately after selecting the protocol in `main.m`. W must be a positive multiple of four; L must be even and at least four. Tested arrays are 8×8, 12×12 and 20×20 (48, 108 and 300 spins). Invalid dimensions are rejected. Each site has four neighbors with reciprocal exchange `Jintra/2`, antisymmetric directed DMI of magnitude `Dsim/2`, and uniform onsite `Ksim`. Set `bc=1` only to select the retained legacy open model, whose receiver-dependent weights differ from this periodic model.
+For another periodic size, set `cfg.protocol.natomW` and `cfg.protocol.natomL`. W must be a positive multiple of four; L must be even and at least four. Tested arrays are 8×8, 12×12 and 20×20 (48, 108 and 300 spins). Invalid dimensions are rejected. Each site has four neighbors with reciprocal exchange `Jintra/2`, antisymmetric directed DMI of magnitude `Dsim/2`, and uniform onsite `Ksim`. Set `cfg.bc=1` only to select the retained legacy open model, whose receiver-dependent weights differ from this periodic model.
 
 Compute the unnormalized mean over **occupied** sites and its angle `atan2d(mean_y,mean_z)`. Equal a/b/c populations make this ordinary site mean equal to the balanced sublattice mean. The angle at an exactly compensated initial state is undefined.
 
@@ -108,7 +116,7 @@ Compute the unnormalized mean over **occupied** sites and its angle `atan2d(mean
 
 For the earlier open-boundary studies and their different outcomes, see the [model-variant comparison](#model-variants-exchange-anisotropy-and-boundaries).
 
-The optional visualization block is disabled with `if(0)`. Enabling it requires an external `threedplott` function and a machine-specific path that are not included here. Plotting is not required for integration.
+The production wrapper performs no plotting. Use the existing static viewers or plot the returned arrays; integration does not require the historical external `threedplott` function.
 
 ## Reproduction of the 2024 PRB figures
 
@@ -132,7 +140,10 @@ The 248-run comparison and saved-data plotting procedure are in the [periodic PR
 
 | File | Role |
 |---|---|
-| `main.m` | Controls, physical parameters, GPU selection, time allocation, integration, workspace save |
+| `main.m` | Small caller for default configuration and a fresh saved run |
+| `mn3sn_default_config.m`, `mn3sn_validate_config.m` | Canonical public inputs and validation of the supported scope |
+| `mn3sn_initialize.m` | CPU initialization, masks/axes and exact derived legacy coefficients |
+| `mn3sn_run.m`, `mn3sn_prepare_output.m` | Function-local integration, explicit result/provenance and protected output directories |
 | `mn3sn_protocol.m` | Named relaxation/figure settings: size, initial angle, drives and time grid |
 | `constantfile.m` | Constants; notably `hbar` is in eV s |
 | `systemgeneration.m` | Initial spin construction; calls `distrib.m` |
@@ -144,7 +155,7 @@ The 248-run comparison and saved-data plotting procedure are in the [periodic PR
 | `atomgpupc4.m` | Legacy predictor-corrector update; currently broken and unverified |
 | `dipole_calc.m` | Disabled, direct, and macrocell dipole branches |
 
-Although `systemgeneration()` and `integrate_llg()` resemble function calls, these files are scripts that depend on shared workspace variables. The three `atomgpu*` files are functions.
+Although `systemgeneration()` and `integrate_llg()` resemble function calls, these files are scripts. The public API supplies their variables in function-local workspaces; caller workspace variables do not configure a run. The three `atomgpu*` files are functions.
 
 ## Annotated notebook
 
@@ -211,7 +222,7 @@ Field sums are flux densities in tesla despite variable names such as `Hext`, `h
 
 ## Output and known limitations
 
-`mmx`, `mmy`, and `mmz` contain the sampled spin components. At the defaults their shapes are `8 x 8 x 101`; figure presets produce `8 x 8 x 20001`. `atomtype_`, initial arrays, protocol, constants, intermediate fields, and other workspace variables are also saved. No versioned result schema or explicit code/hardware provenance is provided.
+`result.mmx`, `result.mmy`, and `result.mmz` contain the sampled spin components. At the defaults their shapes are `8 x 8 x 101`; figure presets produce `8 x 8 x 20001`. Production schema version 1 also records requested/effective configuration, constants/units, occupation/classes/axes, generated and actual initial states, solver/pulse settings, raw invariants, RNG state, UTC timestamp, Git identity when available, source bytes/hashes, MATLAB/toolboxes/OS/GPU and timings. It does not save intermediate workspace fields. The separate benchmark retains its existing schema and accepted baselines.
 
 The saved `t` vector is in seconds and corresponds exactly to the sampled states. Each block stores its initial state plus every update. Shared block boundaries are saved once, and both t=0 and the requested final state are included. `saved_steps` and `actual_updates` record the physical update counts. This corrects the previous default's 19,990 updates (9.995 ps) and drifting labels; old MAT files retain their old timing convention.
 
@@ -220,7 +231,7 @@ The most consequential audit findings are:
 - The frozen-field RK4 defect is repaired: `rk4=1` recomputes fields from the complete lattice at each stage and normalizes only the final occupied spins. See the [repair and figure checks](docs/frozen-field-repair.md). This does not validate optional thermal, dipole, or fixed-edge paths; pinned spins still evolve temporarily inside stages before the legacy final pinning.
 - Periodic exchange is reciprocal and DMI antisymmetric. The retained legacy open branch still has nonreciprocal receiver weights.
 - Material coefficients now match the three-spin reference. Larger-lattice pair normalization and physical geometry remain unresolved; parameter matching does not resolve them.
-- Heun generates NaNs at empty slots. Predictor-corrector startup passes an obsolete argument list. Torque flags and alternative solver guards are incomplete.
+- The public API rejects Heun, predictor-corrector, FL SOT, STT, thermal noise, dipoles, pinning, distribution I/O, `loadstartm` and `dwcalc`. Their legacy code remains unvalidated: Heun generates NaNs at empty slots and predictor-corrector startup passes an obsolete argument list. Supported DMI and DL SOT on/off switches are checked; this does not repair the rejected paths.
 - Dipole mode 1 returns different variable names from those consumed by integration; mode 2 is explicitly marked suspect; mode 3 uses the $y$ spin component for the $z$ moment.
 - `dwcalc=1` initializes occupied sites with collinear domain states and initializes empty slots as spins. It does not construct the published noncollinear chiral wall.
 - `loadstartm` defines a filename but never loads it. Loading a fixed distribution occurs after derived masks are built.

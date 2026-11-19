@@ -11,7 +11,7 @@ records={};
 for W=[8 12 20]
     S=load(fullfile(out,sprintf('%dx%d-static.mat',W,W)));
     for signs=[1 1;1 -1;-1 1;-1 -1]'
-        records{end+1}=replay(root,S,W,signs); %#ok<AGROW>
+        records{end+1}=replay(S,W,signs); %#ok<AGROW>
     end
 end
 result=struct('pass',true,'invalid_sizes_rejected',5,'cases',{[records{:}]},'matlab',version);
@@ -21,18 +21,20 @@ fprintf('PASS periodic production: %d nonuniform driven GPU cases, maximum error
     numel(records),max(cellfun(@(r)r.error,records)));
 end
 
-function result=replay(root,S,W,signs)
+function result=replay(S,W,signs)
 selected_protocol=mn3sn_protocol('fig4a');
 selected_protocol.natomW=W;selected_protocol.natomL=W;
 selected_protocol.current=signs(1)*5e10;selected_protocol.field=[0 signs(2)*.01 0];
 dt=selected_protocol.tstep;
 selected_protocol.runtime=60*dt;selected_protocol.gpusave=20*dt;selected_protocol.savetstep=1;
 selected_protocol.pulse_start=13*dt;selected_protocol.pulse_end=44*dt;
-src=fileread(fullfile(root,'main.m'));src=extractBefore(src,'if(0)%view initial state');
-src=strrep(src,'clear all;clc;close all;tic','');src=regexprep(src,'gpuDevice\(1\)[^\n]*','');
-src=regexprep(src,'protocol=mn3sn_protocol[^\n]*','protocol=selected_protocol;');
-src=strrep(src,"display('use random atom distribution')",'');src=strrep(src,"rng('shuffle');",'');
-eval(src);
+cfg=mn3sn_default_config;cfg.protocol=selected_protocol;
+state=mn3sn_initialize(cfg);
+names=fieldnames(state.config);
+for k=1:numel(names),eval([names{k} '=state.config.(names{k});']);end
+atomtype_=state.atomtype;
+coeffs_1=state.axes(:,:,1);coeffs_2=state.axes(:,:,2);coeffs_3=state.axes(:,:,3);
+mx_init=state.initial(:,:,1);my_init=state.initial(:,:,2);mz_init=state.initial(:,:,3);
 occ=find(atomtype_==1);N=numel(occ);
 assert(bc==0 && isequal(occ,S.occ) && isequal(atomtype_,S.atomtype_));
 axes=[coeffs_1(occ) coeffs_2(occ) coeffs_3(occ)];assert(isequal(axes,S.axes));
@@ -48,7 +50,11 @@ for step=0:59
     m=m+dt/6*(k1+2*k2+2*k3+k4);m=m./vecnorm(m,2,2);
     expected(:,:,step+2)=m;
 end
-integrate_llg;
+cfg.initial_state=cat(3,mx_init,my_init,mz_init);
+production=mn3sn_run(cfg,'');
+mmx=production.mmx;mmy=production.mmy;mmz=production.mmz;t=production.t;
+saved_steps=production.saved_steps;actual_updates=production.actual_updates;
+pulse_active_updates=production.pulse_active_updates;
 actual=zeros(N,3,61);
 for k=1:61
     x=mmx(:,:,k);y=mmy(:,:,k);z=mmz(:,:,k);actual(:,:,k)=[x(occ) y(occ) z(occ)];

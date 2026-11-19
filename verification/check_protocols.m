@@ -81,12 +81,13 @@ fprintf('PASS %d presets, %d pulse cases; reference %.3g; chunk %.3g\n',numel(pr
 end
 
 function r=source_run(selected_protocol,integrate)
-root=fileparts(fileparts(mfilename('fullpath')));
-src=fileread(fullfile(root,'main.m'));src=extractBefore(src,'if(0)%view initial state');
-src=strrep(src,'clear all;clc;close all;tic','');src=regexprep(src,'gpuDevice\(1\)[^\n]*','');
-src=regexprep(src,'protocol=mn3sn_protocol[^\n]*','protocol=selected_protocol;');
-src=strrep(src,"display('use random atom distribution')",'');src=strrep(src,"rng('shuffle');",'');
-eval(src);
+cfg=mn3sn_default_config;cfg.protocol=selected_protocol;
+state=mn3sn_initialize(cfg);
+names=fieldnames(state.config);
+for k=1:numel(names),eval([names{k} '=state.config.(names{k});']);end
+atomtype_=state.atomtype;
+coeffs_1=state.axes(:,:,1);coeffs_2=state.axes(:,:,2);coeffs_3=state.axes(:,:,3);
+mx_init=state.initial(:,:,1);my_init=state.initial(:,:,2);mz_init=state.initial(:,:,3);
 r=struct('mu',musRE,'J',Jintra,'Kfield',2*Ksim,'gamma',gamRE,'Ms',msRE, ...
     'thickness',tz,'spacing',d,'b',BDSOTRE,'gpusteps',gpusteps,'updates',totstep, ...
     'occupied',nnz(atomtype_==1),'frames',numel(unique([0:savetstep:totstep totstep])));
@@ -98,7 +99,9 @@ all_initial=[mx_init(occ) my_init(occ) mz_init(occ)];
 assert(max(abs(all_initial-r.initial(classes,:)),[],'all')<1e-14);
 assert(bc==0 && all(accumarray(classes,1,[3 1])==16));
 if ~integrate,return;end
-integrate_llg;
+production=mn3sn_run(cfg,'');
+mmx=production.mmx;mmy=production.mmy;mmz=production.mmz;t=production.t;
+actual_updates=production.actual_updates;pulse_active_updates=production.pulse_active_updates;
 r.t=t;r.active_updates=pulse_active_updates;
 assert(actual_updates==totstep && numel(t)==size(mmx,3));
 assert(abs(t(end)-runtime)<1e-24 && t(1)==0 && all(diff(t)>0));

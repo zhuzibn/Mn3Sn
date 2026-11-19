@@ -74,6 +74,13 @@ Use the fields below where useful; omit inapplicable fields:
 - **Reference:** [Benchmark usage](benchmark/README.md) and [validation evidence](docs/benchmark.md).
 - **Test Strategy:** GPU baseline and fresh candidate suites, repeatability/invariant checks, comparator corruption tests, safe-path checks and independent read-only review.
 
+### 2026-11-19 | Validated configuration and protected production results
+- **Type:** feat
+- **Description:** Production and benchmarks now share explicit validated inputs and callable initialization/integration. Saved runs contain a versioned result with effective settings, raw trajectories, mapping, RNG/runtime identity and exact source bytes/hashes in a fresh protected external directory.
+- **Compatibility:** `main.m` now saves `result.mat` containing one `result` variable instead of overwriting the entire workspace in `finalnew.mat`. Use `mn3sn_default_config` and `mn3sn_run` for overrides. Unsupported solvers/optional physics fail early; numerical defaults, physics kernels, benchmark schema and accepted baselines are unchanged. Missing references no longer implicitly bootstrap a benchmark.
+- **Reference:** [Configuration, migration and validation](docs/configuration-results.md).
+- **Test Strategy:** Exact pre-migration initialization/short-trajectory captures; accepted quick/current full-trajectory comparisons; configuration, persistence, provenance and path rejection tests; existing protocol, field, periodic and coupled-RK4 checks; viewer data preservation and independent read-only review.
+
 ---
 
 ## Section 2: Error & Solution Log

@@ -2,7 +2,8 @@
 
 Run this benchmark before and after a code change to compare saved trajectories
 and synchronized GPU runtime. It adapts the [ASTRO benchmark workflow](https://github.com/zhuzibn/ASTRO/tree/master/benchmark)
-to Mn3Sn's periodic production model. Production MATLAB files are unchanged.
+to Mn3Sn's periodic production model. It uses the same configuration,
+initialization and callable runner as production, with the unchanged solver.
 The baseline records existing behavior; it does not establish physical correctness.
 
 ## Run and compare
@@ -24,9 +25,11 @@ assert(passed);
 
 Use `'current'` and `manifest.current.directory` for the production-size suite.
 Use a new candidate directory for every invocation. The runner refuses any
-existing output directory, a location inside this repository, or a OneDrive path.
+existing output directory/file, a location inside this repository, a OneDrive path,
+or any registered/selected baseline directory and its descendants.
 It copies the production source before execution, records its hashes, and runs in
-that isolated directory. It never calls `main.m`'s final save or visualization.
+that isolated directory. It calls `mn3sn_run(cfg,'')` in memory and projects the
+result into the existing benchmark schema; production does not save a second file.
 
 A shell equivalent is:
 
@@ -135,7 +138,8 @@ initial fixtures without loading the old baseline:
 run_baseline_benchmark('quick','D:/.../new-baseline-quick','');
 ```
 
-Without an existing manifest, the initial bootstrap also works with two arguments.
+Missing manifests or input artifacts fail ordinary two-argument runs before
+creating output. An absent manifest never implicitly authorizes bootstrap.
 The bootstrap nonuniform state uses a deterministic trigonometric construction;
 its actual arrays are saved for later runs. Validate a fresh candidate, inspect the
 comparison and source changes, then deliberately update the manifest. Never loosen
@@ -152,12 +156,16 @@ This requires a fresh test directory and MATLAB, but no GPU simulation. It tests
 21 deliberate corruptions, including an intermediate norm-preserving rotation
 with an unchanged final state, invalid baseline data, incomplete suites, stale
 summaries, incompatible clocks/configuration and missing files. It also checks
-source-change acceptance, invalid timing, output protection and MATLAB syntax.
+source-change acceptance, invalid timing, output protection (including baseline
+subtrees/path aliases), missing references/manifest and MATLAB syntax.
 
-The source extraction intentionally checks exact `main.m` initialization anchors.
-A structural refactor may require a reviewed harness update; it must not silently
-fall back to duplicated parameters. See [validation evidence](../docs/benchmark.md)
-for commands, environments, timings, interruptions and limitations.
+The adapter obtains inputs from `mn3sn_default_config` and `mn3sn_initialize`,
+then compares the complete effective configuration and mapping with frozen inputs.
+It does not parse `main.m` or maintain a duplicate material-default block. The
+comparator, schema, manifest and accepted artifacts are unchanged. See the
+[original benchmark evidence](../docs/benchmark.md) and
+[configuration migration checks](../docs/configuration-results.md) for commands,
+environments, timings and limitations.
 
 No coverage is claimed for full-length switching, open boundaries, thermal noise,
 dipoles, pinning, restart, alternate solvers, physical crystallographic topology,

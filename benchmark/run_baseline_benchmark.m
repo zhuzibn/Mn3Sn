@@ -2,23 +2,18 @@ function metadata=run_baseline_benchmark(mode,output_root,input_root)
 %RUN_BASELINE_BENCHMARK Run a fresh deterministic suite; never overwrite output.
 % mode: quick (4x4) or current (8x8). output_root must not exist.
 % input_root optionally selects a prior suite supplying frozen inputs.
-% Without it, use baseline_manifest.json when present, otherwise bootstrap.
+% Without it, require the accepted baseline_manifest.json; never bootstrap implicitly.
 mode=validatestring(mode,{'quick','current'});
 root=fileparts(fileparts(mfilename('fullpath')));
 assert(nargin>=2 && ~isempty(output_root),'A fresh external output directory is required.');
-output_root=char(java.io.File(output_root).getCanonicalPath());
-canonical_root=char(java.io.File(root).getCanonicalPath());
-assert(~strcmpi(output_root,canonical_root) && ...
-    ~startsWith(lower(output_root),[lower(canonical_root) filesep]),'Outputs must be outside the repository.');
-assert(~contains(lower(output_root),'onedrive'),'Outputs must be outside OneDrive.');
-assert(~isfolder(output_root) && ~isfile(output_root),'Output already exists: %s',output_root);
+bootstrap=nargin>=3 && isempty(input_root);
 if nargin<3
-    input_root='';manifest_file=fullfile(root,'benchmark','baseline_manifest.json');
-    if isfile(manifest_file)
-        manifest=jsondecode(fileread(manifest_file));
-        input_root=fullfile(root,manifest.(mode).directory);
-    end
+    manifest_file=fullfile(root,'benchmark','baseline_manifest.json');
+    assert(isfile(manifest_file),'Mn3Sn:MissingBaseline','Accepted baseline manifest is missing.');
+    manifest=jsondecode(fileread(manifest_file));
+    input_root=fullfile(root,manifest.(mode).directory);
 end
+if ~isempty(input_root),input_root=char(java.io.File(input_root).getCanonicalPath());end
 frozen=cell(1,2);cases={'relaxation','driven_nonuniform'};
 for k=1:2
     if ~isempty(input_root)
@@ -26,9 +21,7 @@ for k=1:2
         benchmark_validate(data.result);frozen{k}=data.result;
     end
 end
-% Claim a new directory, rejecting races as well as existing directories.
-parent=fileparts(output_root);if ~isfolder(parent),mkdir(parent);end
-assert(java.io.File(output_root).mkdir(),'Could not create fresh output directory.');
+output_root=mn3sn_prepare_output(output_root,input_root,bootstrap);
 original_path=path;original_dir=pwd;
 cleanup=onCleanup(@() restore_context(original_dir,original_path));
 diary(fullfile(output_root,'matlab.log'));diary_cleanup=onCleanup(@() diary('off'));
