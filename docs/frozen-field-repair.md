@@ -31,7 +31,7 @@ spin polarization and kagome plane in Mn3Sn,” Physical Review B **109**,
 134433 (2024), [DOI](https://doi.org/10.1103/PhysRevB.109.134433).
 Model and protocol locators are Sec. II, Fig. 2/Table I, and Figs. 4–5 on
 printed page 134433-5. The existing reviewed-paper evidence and reference
-settings/report are identified in [plan.md](../plan.md).
+settings/report are identified in [archived plan](audit-history.md).
 
 The spatial model is Class 4 fixed-length LLGS. For this comparison, its
 2×2 open array contains exactly three occupied spins plus one vacancy.

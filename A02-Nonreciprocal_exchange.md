@@ -1,6 +1,6 @@
 # A02 — Nonreciprocal exchange: historical relaxation evidence
 
-Evidence summary prepared on 2026-10-29 from [discussion_zhengde.md][D] and Zhengde Xu's weekly-report presentations. This note records the historical reason for the middle/interior exchange correction and the limits of the available results. The current implementation audit remains in [plan.md, A02](plan.md#a02-follow-up-page-19-structure-comparison-2026-10-21).
+Evidence summary prepared on 2026-10-29 from [discussion_zhengde.md][D] and Zhengde Xu's weekly-report presentations. This note records the historical reason for the middle/interior exchange correction and the limits of the available results. The historical implementation audit is retained in [the archived A02 finding](docs/audit-history.md#a02-follow-up-page-19-structure-comparison-2026-10-21).
 
 **The strongest documented result is that halving the middle/interior exchange produced the expected relaxation in both 3×3 and 15×15 samples. However, a 2:1 edge-to-interior ratio alone did not guarantee success: doubling edge exchange was subsequently reported as unsuccessful, and relaxation depended strongly on timestep.**
 
@@ -64,7 +64,7 @@ The records do **not** establish:
 4. That a slow trajectory has the wrong eventual equilibrium, or that continued oscillation uniquely identifies an exchange error.
 5. Reciprocity or energy-gradient consistency of the historical interaction coefficients.
 
-**Relation to A02:** the existing [A02 audit](plan.md#a02-follow-up-page-19-structure-comparison-2026-10-21) separately records unequal reverse exchange weights in the current code. The historical reports help explain why site-dependent scaling was introduced; they do not resolve that audit finding. No source-code change or physical-model correction is made or authorized by this note.
+**Relation to A02:** the existing [A02 audit](docs/audit-history.md#a02-follow-up-page-19-structure-comparison-2026-10-21) separately records unequal reverse exchange weights in the current code. The historical reports help explain why site-dependent scaling was introduced; they do not resolve that audit finding. No source-code change or physical-model correction is made or authorized by this note.
 
 ## Published PRB Figure 5 code verification — 2026-10-29
 

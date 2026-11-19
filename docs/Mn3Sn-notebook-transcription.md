@@ -12,7 +12,7 @@ tables, readable notes, and diagram labels are transcribed below; drawings and
 pasted figures are described and retained in full in the page images. This is
 a semantic transcription, not a pixel-by-pixel redraw or independently verified
 model specification. The source PDF remains authoritative for handwriting and
-graphical detail. See [README.md](../README.md) and [plan.md](../plan.md) for the
+graphical detail. See [README.md](../README.md) and [archived audit](audit-history.md) for the
 separate description and audit of the MATLAB implementation.
 
 Conventions:

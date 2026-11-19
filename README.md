@@ -13,7 +13,7 @@ MATLAB code for a two-dimensional, spatially resolved classical-spin model of Mn
 2. Zhengde Xu, Yue Zhou, Xue Zhang, Yixiao Qiao, Zhuo Xu, Dingfu Shao, Zhifeng Zhu, Spin-orbit torque-driven chiral domain wall motion in Mn3Sn, Applied Physics Letters **127**, 072402 (2025). [DOI: 10.1063/5.0275467](https://doi.org/10.1063/5.0275467).
 3. Boyu Zhao, Zhengde Xu, Xue Zhang, Zhenhang Kong, Shouzhong Peng, Shuyuan Shi, Zhifeng Zhu, Investigation of sub-configurations reveals stable spin–orbit torque switching polarity in polycrystalline Mn3Sn, Applied Physics Letters **127**, 022407 (2025). [DOI: 10.1063/5.0273330](https://doi.org/10.1063/5.0273330).
 
-The 2024 switching paper uses a three-sublattice macrospin model. The 2025 domain-wall paper extends it to a spatial atomistic nanoribbon and reports a different exchange coefficient. The 2025 sub-configuration paper evolves three Mn moments while scanning rotated orientations; it does not simulate coupled grains. These distinctions matter when choosing parameters and comparing results. Detailed source locators are recorded in `plan.md`.
+The 2024 switching paper uses a three-sublattice macrospin model. The 2025 domain-wall paper extends it to a spatial atomistic nanoribbon and reports a different exchange coefficient. The 2025 sub-configuration paper evolves three Mn moments while scanning rotated orientations; it does not simulate coupled grains. These distinctions matter when choosing parameters and comparing results. Detailed source locators are recorded in the [archived audit](docs/audit-history.md#references).
 
 ## Requirements and running
 
@@ -37,6 +37,23 @@ matlab -batch "run('main.m')"
 **Output:** `main.m` saves the entire workspace into `finalnew.mat` in the current directory, overwriting a file of that name. Preserve existing results before running. There is no implemented output-path option or restart reader. Select a protocol inside `main.m`; setting workspace variables before running it does not override its defaults.
 
 Save new simulation results, MATLAB logs and generated simulation figures outside OneDrive, under a fresh directory in `D:\Git_control\spin_dynamics\simulation_results\Mn3Sn` (WSL: `/mnt/d/Git_control/spin_dynamics/simulation_results/Mn3Sn`). For `main.m`, copy the root `.m` files into that external directory and run from the copy. Verification harnesses with explicit output arguments should receive the external path. Historical datasets are retained at their recorded locations.
+
+## Model variants: exchange, anisotropy and boundaries
+
+The variants below evolve individual fixed-length spins with the same coupled LLGS solver, but use different boundary and interaction rules. Here $J$ is `Jintra`, $D$ is `Dsim`, $K$ is the uniform reference `Ksim`, and $z_i$ counts actual occupied exchange neighbors. **Nonuniform anisotropy means a site-dependent strength $K_i$**; the sublattice-dependent easy-axis directions are retained in every variant.
+
+| Variant and availability | Boundaries and exchange/DMI | Anisotropy strength | Recorded result |
+|---|---|---|---|
+| **Periodic model — production default, `bc=0`** | Periodic in both directions; four neighbors per site; reciprocal $J/2$ bonds and antisymmetric directed DMI of magnitude $D/2$ | Uniform $K_i=K$ | Six equal-energy orientations; all 48 switching cases match the numerical reference using the ordinary site mean. [Relaxation](docs/periodic-six-state.md), [switching](docs/periodic-prb2024.md). |
+| **Nonreciprocal model — retained legacy branch, `bc=1`** | Open patch; receiver-dependent factors of 1/2 or 1 multiply both exchange and DMI. Some reverse exchange weights are unequal and DMI weights are not antisymmetric. | Uniform $K_i=K$ | Six orientations; all 48 switching cases match the numerical reference using the balanced sublattice mean. The ordinary site mean differs. [Comparison](docs/nonreciprocal-switching.md). |
+| **Reciprocal open model with uniform anisotropy — diagnostic baseline** | Open patch; reciprocal $J/2$ bonds and antisymmetric directed DMI of magnitude $D/2$ | Uniform $K_i=K$ | Only two stable destinations, 90° and 270°, on the tested spatial patches; fails the six-state criterion. [Six-state baseline](docs/six-state-relaxation.md). |
+| **Reciprocal open model with nonuniform anisotropy — diagnostic trial** | Same open graph and $J/2,D/2$ bonds as the preceding baseline | $K_i=Kz_i/4$: $K/2$ at two-neighbor sites and $K$ at four-neighbor sites | Restores six equal-energy stable states, but fails the low-field switching destinations, sustained z reversal and sampled field transition. High-field final angles agree. [Relaxation](docs/anisotropy-six-state.md), [switching](docs/anisotropy-switching.md). |
+
+In `main.m`, `bc=0` and `bc=1` select the first two rows, respectively. The reciprocal open variants are isolated studies under `verification/spatial_relaxation/`; follow their linked reports to reproduce them. Setting `bc=1` alone does not select either reciprocal open variant. The nonuniform-anisotropy trial uses the diagnostic's `triangle` mode and an array-valued `Ksim`.
+
+The observable matters: the balanced mean is $(\overline{\mathbf m}_a+\overline{\mathbf m}_b+\overline{\mathbf m}_c)/3$, whereas the ordinary site mean is $N^{-1}\sum_i\mathbf m_i$. Neither is normalized. The tested open patches have excess b sites, so these means differ; complete periodic cells have equal a/b/c populations, making them equal. The periodic and legacy nonreciprocal operators both preserve the reference coherent subspace through matching per-sublattice field sums. This explains their agreement under the tested uniform drives, despite their different bond rules.
+
+These results summarize the recorded deterministic checks, not new simulations. Numerical-reference agreement is quantitative; comparison with published curves is qualitative. Physical justification of the nonreciprocal equal-moment bonds and the coordination-dependent edge anisotropy remains **REFERENCE MISSING**. Periodic boundaries remove physical edges; the current periodic agreement does not validate a finite device or resolve the crystallographic mapping.
 
 ## Relaxation and paper protocols
 
@@ -66,7 +83,7 @@ Compute the unnormalized mean over **occupied** sites and its angle `atan2d(mean
 
 **Switching comparison:** all 48 PRB Figure 2, 4(a), and 5 reference cases pass at each periodic size. Ordinary site-mean trajectories agree with the numerical reference within 7.72e-12 per component. All 248 primary/control, refinement and perturbed-start runs pass; see the [comparison report](docs/periodic-prb2024.md). Perturbations were applied at t=0 and decay before the pulse, so this does not establish robustness to disturbances during switching.
 
-Earlier open-boundary comparisons remain documented in the [six-state study](docs/six-state-relaxation.md), [coordination-weighted anisotropy trial](docs/anisotropy-switching.md), and [nonreciprocal switching study](docs/nonreciprocal-switching.md). They describe different boundary/weight choices and are not the production default.
+For the earlier open-boundary studies and their different outcomes, see the [model-variant comparison](#model-variants-exchange-anisotropy-and-boundaries).
 
 The optional visualization block is disabled with `if(0)`. Enabling it requires an external `threedplott` function and a machine-specific path that are not included here. Plotting is not required for integration.
 
@@ -140,9 +157,9 @@ Refresh and verification commands are in [production verification](docs/periodic
 
 Spin components are arrays indexed `(W, L, time)`. Array row/column indices are not a documented crystallographic coordinate system. The spin initialization and easy axes lie in the spin-space $yz$ plane; the default polarization is $+x$, perpendicular to that plane.
 
-For the notebook's 5×6 example with open boundaries (`bc=1`), the code and [Mn3Sn.pdf, pages 19–20](Mn3Sn.pdf#page=19) are structurally equivalent in their occupation pattern and nearest-neighbor connectivity: 20 occupied sites, 10 empty slots, and 30 undirected connections, including the same removal of site `(3,6)`. This equivalence concerns the lattice connectivity; exchange weights and physical crystallographic coordinates remain separate issues. See the [A02 follow-up in plan.md](plan.md#a02-follow-up-page-19-structure-comparison-2026-10-21) for the recorded verification.
+For the notebook's 5×6 example with open boundaries (`bc=1`), the code and [Mn3Sn.pdf, pages 19–20](Mn3Sn.pdf#page=19) are structurally equivalent in their occupation pattern and nearest-neighbor connectivity: 20 occupied sites, 10 empty slots, and 30 undirected connections, including the same removal of site `(3,6)`. This equivalence concerns the lattice connectivity; exchange weights and physical crystallographic coordinates remain separate issues. See the [archived A02 follow-up](docs/audit-history.md#a02-follow-up-page-19-structure-comparison-2026-10-21) for the recorded verification.
 
-The implemented anisotropy is onsite uniaxial easy-axis anisotropy, with energy $-K(\mathbf e_i\cdot\mathbf s_i)^2$ and field $(2K/\mu)(\mathbf e_i\cdot\mathbf s_i)\mathbf e_i$, matching the three-spin reference. Its axis directions and assignments agree with [Mn3Sn.pdf, pages 4 and 21](Mn3Sn.pdf#page=4): $\varphi=\pi/2$ and $\theta=\pi/6,3\pi/2,5\pi/6$. A MATLAB check of the page-21 5×6 example matched all 20 occupied sites and 10 empty slots. The earlier [A04 audit](plan.md#a04-follow-up-anisotropy-correspondence-to-pages-4-and-21-2026-10-21) records the pre-alignment factor difference; the current field includes the required factor two.
+The implemented anisotropy is onsite uniaxial easy-axis anisotropy, with energy $-K(\mathbf e_i\cdot\mathbf s_i)^2$ and field $(2K/\mu)(\mathbf e_i\cdot\mathbf s_i)\mathbf e_i$, matching the three-spin reference. Its axis directions and assignments agree with [Mn3Sn.pdf, pages 4 and 21](Mn3Sn.pdf#page=4): $\varphi=\pi/2$ and $\theta=\pi/6,3\pi/2,5\pi/6$. A MATLAB check of the page-21 5×6 example matched all 20 occupied sites and 10 empty slots. The earlier [A04 audit](docs/audit-history.md#a04-follow-up-anisotropy-correspondence-to-pages-4-and-21-2026-10-21) records the pre-alignment factor difference; the current field includes the required factor two.
 
 `atomtype_==1` denotes an occupied Mn spin site, and `atomtype_==3` denotes an empty slot. The `RE`/`TM` names and comments are inherited from ferrimagnetic code: occupied Mn sites use the `RE` coefficients. They do not describe two physical Mn species. Empty slots must remain zero vectors; unit-norm checks apply only to occupied sites.
 
@@ -194,7 +211,7 @@ The earlier [2026-11-02 three-spin comparison](docs/three-spin-comparison.md) re
 
 On 2026-10-14, MATLAB R2024b Update 1 and an NVIDIA GeForce RTX 3060 Laptop GPU were available. A temporary two-block GPU probe used six allocated states per block and saved every two indices. Its six saved frames were finite, occupied spins had zero measured norm error, and empty slots remained zero. It confirmed 10 actual updates against 12 nominal updates. CPU probes reproduced the Heun empty-slot failure, obsolete RK4 startup call, and missing dipole-mode-1 field outputs. An effective exchange matrix reconstructed from the then-current open stencils had 24 directed mismatches (12 unordered bonds), with maximum normalized asymmetry 0.5. MATLAB Code Analyzer returned 18 messages across the nine source files; these are diagnostics, not a physics-validation result.
 
-The October audit did not validate production-length simulations, convergence order, stochastic dynamics, energy derivatives, or published results. Later three-site and solver checks are recorded separately above. [plan.md](plan.md) records the staged work and remaining limitations.
+The October audit did not validate production-length simulations, convergence order, stochastic dynamics, energy derivatives, or published results. Later three-site and solver checks are recorded separately above. [plan.md](plan.md) tracks pending work; the [archived audit and completed plans](docs/audit-history.md) retain the historical evidence.
 
 ## License
 

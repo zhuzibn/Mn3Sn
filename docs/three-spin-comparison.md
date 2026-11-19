@@ -2,7 +2,7 @@
 
 **The spatial code reduces to the reference triangle at the field/RHS level after explicit parameter matching. Recomputing fields at each RK stage also reproduces the corrected reference dynamics. The native frozen-field method does not meet the trajectory-accuracy target, including at its default 0.5 fs timestep.** No production MATLAB file, physical default, reference repository, or historical result was changed.
 
-This executes the [approved comparison](../plan.md#three-spin-comparison--2026-11-02). The diagnostic is a Class 5, three-sublattice, fixed-length LLGS model. It establishes an algebraic three-vector correspondence, not the validity of the extended spatial lattice, periodic seams, or A02's larger-lattice weights.
+This executes the [approved comparison](audit-history.md#three-spin-comparison--2026-11-02). The diagnostic is a Class 5, three-sublattice, fixed-length LLGS model. It establishes an algebraic three-vector correspondence, not the validity of the extended spatial lattice, periodic seams, or A02's larger-lattice weights.
 
 ## Mapping, fields, and parameters
 

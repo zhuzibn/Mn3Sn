@@ -15,7 +15,7 @@ between spin polarization and kagome plane in Mn3Sn,” Physical Review B **109*
 Fig. 2/Table I and Figs. 4–5. Exact numerical conventions and protocol settings
 come from the verified local reference implementation and its
 `FIG2_FIG4_SETTINGS.md` and `docs/rk4-verification.md`. The paper evidence
-record, equation references and implementation stages are in [plan.md](../plan.md).
+record, equation references and implementation stages are in [archived plan](audit-history.md).
 
 ## Material changes
 

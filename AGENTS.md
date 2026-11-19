@@ -2,7 +2,7 @@
 
 ## Scope and source of truth
 
-This repository implements spatial classical-spin dynamics for Mn3Sn in MATLAB. Read `README.md` for actual entry points, defaults, requirements, outputs, and solver limitations. Read `plan.md` for the audit, scientific evidence, and proposed improvements.
+This repository implements spatial classical-spin dynamics for Mn3Sn in MATLAB. Read `README.md` for actual entry points, defaults, requirements, outputs, and solver limitations. Read `plan.md` for pending work and implementation scope. Completed findings and validation live in `docs/`; the historical audit and completed plans are in `docs/audit-history.md`.
 
 The current source defines implemented behavior. The three papers cited in `README.md` define their own published models and protocols; do not assume that this checkout reproduces them. Distinguish spatial atomistic calculations from three-sublattice switching models and isolated orientation scans.
 
@@ -15,7 +15,7 @@ Use the installed `spin-dynamics-development` skill for physics, field, torque, 
 - Do not create branches, commits, or pushes without task authorization.
 - Do not modify other spin-dynamics repositories or knowledge bases as a side effect.
 - Do not install dependencies or access the network without authorization.
-- Keep durable instructions here, user-facing behavior in `README.md`, and findings and implementation checkpoints in `plan.md`.
+- Keep durable instructions here, user-facing behavior in `README.md`, pending scope and acceptance checks in `plan.md`, and completed findings/validation in `docs/`. Remove completed task details from `plan.md` after recording them in the relevant report.
 - Update `CHANGELOG.md` for meaningful behavior changes or significant fixes, following the global changelog policy. Group related edits into one entry.
 - Check documentation impact, `git diff --stat`, and `git diff --check` before completion. Include new untracked files in the review.
 

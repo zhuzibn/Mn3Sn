@@ -4,7 +4,7 @@
 
 **All six reference orientations survive on the tested periodic arrays with reciprocal J/2,D/2 bonds and uniform K.** The 48-, 108- and 300-spin cells relax to mean-spin angles 30°, 90°, 150°, 210°, 270° and 330°. The six final configurations are distinct, have equal energies to numerical precision, and recover after small spatial perturbations. On the largest cell, all twelve +/-5° orientation-offset starts also return to their corresponding state.
 
-This is a deterministic, zero-drive test of the existing mathematical interior stencil continued periodically in both directions. It is not a crystallographic validation or an exhaustive search for metastable textures. At the time of this isolated experiment, production source and defaults were unchanged; they have since been promoted as described above. The [approved plan](../plan.md#proposed-periodic-six-state-relaxation-test--2026-11-09) records the scope and evidence limitations.
+This is a deterministic, zero-drive test of the existing mathematical interior stencil continued periodically in both directions. It is not a crystallographic validation or an exhaustive search for metastable textures. At the time of this isolated experiment, production source and defaults were unchanged; they have since been promoted as described above. The [approved plan](audit-history.md#proposed-periodic-six-state-relaxation-test--2026-11-09) records the scope and evidence limitations.
 
 **Driven follow-up:** the [PRB 2024 switching comparison](periodic-prb2024.md) also passes for this same periodic reciprocal model with uniform K: all 48 reference cases per size, including Figures 2, 4(a), and 5, across 248 total trajectories.
 
