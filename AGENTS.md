@@ -52,10 +52,19 @@ Heun (`rk4=0`) and predictor-corrector (`rk4=2`) are legacy paths with known def
 
 Treat thermal noise, dipole modes 1–3, fixed edges, loaded distributions, `loadstartm`, and `dwcalc` as unvalidated options. Any work on them must exercise the selected branch, its interaction with empty slots, and its output contract. Keep stochastic conventions separate from deterministic RK4 fixes.
 
+## Benchmark ownership
+
+- `benchmark/run_baseline_benchmark.m` runs quick (4x4) or current (8x8) periodic suites; `benchmark/compare_to_baseline.m` compares complete saved trajectories and reports timing separately.
+- Read `benchmark/README.md` before running or modifying the benchmark. Use a fresh external output directory. The runner loads frozen inputs from the manifest's baseline by default; an explicit third argument selects another baseline directory.
+- Run timing suites sequentially without competing GPU work. After an unexpected WSL launcher exit, check Windows MATLAB processes and output completion before retrying.
+- Treat `benchmark/baseline_manifest.json` and its external baseline artifacts as accepted regression data. Do not regenerate or promote baselines as a side effect of code changes; obtain explicit authorization for replacement.
+- Raw baseline data are external and are not included in a Git clone. Missing baseline artifacts are a reported limitation, not permission to bootstrap replacements.
+- Preserve full-trajectory comparison, exact configuration/clock checks, zero vacancies, occupied norms and safe-path guards. Use `benchmark/check_benchmark.m` for changes to the benchmark itself. Existing scientific checks remain required for physics or solver changes.
+
 ## Validation and result protection
 
 - Save new simulation data, MATLAB logs and generated simulation figures outside OneDrive. Default to `D:\Git_control\spin_dynamics\simulation_results\Mn3Sn` (`/mnt/d/Git_control/spin_dynamics/simulation_results/Mn3Sn` in WSL), with a fresh directory per run. Keep source and written reports in this repository. For unmodified `main.m`, use an isolated source copy in the external run directory because its save path is fixed. Preserve historical datasets unless their relocation is explicitly requested.
-- Use the narrowest checks appropriate to the requested work; there is no accepted local regression baseline yet.
+- Use the narrowest checks appropriate to the requested work. Deterministic regression baselines are registered in `benchmark/baseline_manifest.json`; see `benchmark/README.md` and `docs/benchmark.md`.
 - Preserve historical results before establishing a baseline. A record of legacy behavior is not proof of physical correctness.
 - Candidate runs must avoid overwriting `finalnew.mat`, `atomtypee.mat`, and external result files. The current script has no built-in safe output selection, so use an explicitly reviewed temporary harness or isolated copy for audit runs.
 - Check shapes, finite occupied spins, occupied norms, exact zero empty slots, sublattice mapping, actual update counts, and alignment of saved states with physical times.

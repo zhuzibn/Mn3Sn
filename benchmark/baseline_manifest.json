@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "created": "2026-11-19",
+  "production_commit": "8bacbeb47a2c5bf285945c08261a9cadf1485583",
+  "scope": "Deterministic periodic coupled RK4: relaxation and short nonuniform driven case. Existing behavior, not physical validation.",
+  "trajectory_tolerance": 1e-10,
+  "occupied_norm_tolerance": 1e-12,
+  "quick": {
+    "directory": "../simulation_results/Mn3Sn/benchmark/20261119-v1/quick-baseline",
+    "sha256": {
+      "relaxation.mat": "60c5e7c9df47f1168122e2544fc762890d7e1d50f796194e24d8d43df08977ff",
+      "driven_nonuniform.mat": "a1c7b17140e50c430b3fac3f6bc5c65ec181630b961a2634dfa03d65efd82929",
+      "metadata.json": "3fc06b31f40c7434f68347b4544c62d5a132ce26accacc1df734b853ed435904"
+    }
+  },
+  "current": {
+    "directory": "../simulation_results/Mn3Sn/benchmark/20261119-v1/current-candidate",
+    "sha256": {
+      "relaxation.mat": "38cd87f993c6d2984f50406a8ef754cd309c26862ba67d29af869966321b86af",
+      "driven_nonuniform.mat": "7424d194bcd744cb475d3ddefb4a991396327134014c1927d5ae3396bcce8e4b",
+      "metadata.json": "f637f10fd61a662bbd95ae0c2e40c47d21461ae72586af33f73bbd63bf38d221"
+    }
+  }
+}

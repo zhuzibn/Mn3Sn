@@ -67,6 +67,13 @@ Use the fields below where useful; omit inapplicable fields:
 - **Reference:** [Production verification](docs/periodic-production.md), [periodic PRB comparison](docs/periodic-prb2024.md).
 - **Test Strategy:** Exact model/fixture equivalence to the approved diagnostic; seam, gradient, fresh MATLAB/GPU drive, protocol, coupled-convergence and viewer/source checks. Physical crystallographic mapping remains unresolved.
 
+### 2026-11-19 | Deterministic regression and timing benchmark
+- **Type:** feat
+- **Description:** Add quick and production-size periodic benchmark suites with protected external baselines, frozen inputs, full saved-trajectory comparisons, diagnostic plots and synchronized GPU timings. Production solver behavior is unchanged.
+- **Motivation:** Later code changes need a repeatable correctness and performance reference without overwriting simulation results.
+- **Reference:** [Benchmark usage](benchmark/README.md) and [validation evidence](docs/benchmark.md).
+- **Test Strategy:** GPU baseline and fresh candidate suites, repeatability/invariant checks, comparator corruption tests, safe-path checks and independent read-only review.
+
 ---
 
 ## Section 2: Error & Solution Log

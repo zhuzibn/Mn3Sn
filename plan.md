@@ -5,6 +5,10 @@ Current behavior belongs in [README.md](README.md); completed investigations and
 validation belong in the reports under `docs/`. Listing an item here does not
 approve its implementation. No implementation task is currently in progress.
 
+The approved deterministic benchmark is complete: quick/current suites, protected
+external baselines, full-trajectory comparisons and timing evidence are documented
+in [docs/benchmark.md](docs/benchmark.md). Production physics and source are unchanged.
+
 ## Remaining work
 
 These items summarize existing limitations, not new feature commitments. Select
@@ -16,7 +20,7 @@ and scope the relevant item before starting substantial source changes.
 | Legacy open-boundary model | Resolve the physical justification of receiver-dependent exchange/DMI weights. Periodic production is already reciprocal; the legacy open branch remains a separate issue. | Agree the intended open model before changing weights; check reciprocal bonds, field/energy consistency and edge/size dependence. See [A02 evidence](A02-Nonreciprocal_exchange.md). |
 | Solver selection and torque flags | Heun and predictor-corrector remain defective; early rejection is still proposed. Independent FL/DL and STT flag behavior and guards need scoped validation. | Exercise selected/rejected paths, vacancies and flag combinations; preserve the explicit Gilbert damping cross terms. Restoring another solver requires separate convergence checks. |
 | Optional paths | Thermal noise, dipoles, pinning, loaded distributions, restart and domain-wall initialization remain unvalidated. | Scope each requested path separately, including its physical conventions, occupied-spin/vacancy invariants and output contract. Domain walls require sourced sublattice states and physical coordinates. |
-| Results and regression workflow | Fixed-name full-workspace output can overwrite results; no production output-path override, versioned result schema, accepted regression baseline or CI exists. | Define a compatible output/provenance contract and safe paths; preserve historical data and establish a deterministic baseline from the existing verification tools. |
+| Production results workflow | The production entry point still writes fixed-name full-workspace output; no production output-path override or CI exists. The separate benchmark now has versioned results, safe external paths and accepted deterministic baselines. | Scope any production-output change separately; preserve historical data and compatibility. See [benchmark evidence](docs/benchmark.md). |
 | Performance | Repeated transfers and workspace storage remain candidates for profiling. | Profile an agreed representative case first; any optimization must preserve fields, trajectories, clocks and vacancy handling. |
 
 Additional publication studies (orientation scans, domain-wall motion or octupole
@@ -29,6 +33,7 @@ The visualization, frozen-field RK4 repair, parameter alignment, physical clock
 repair and periodic production promotion are complete within their documented
 scope. They are not pending tasks.
 
+- [Deterministic regression and timing benchmark](docs/benchmark.md)
 - [Structure viewers and usage](README.md#interactive-structure-and-interactions)
 - [Coupled RK4 repair and figure checks](docs/frozen-field-repair.md)
 - [Reference parameters, protocols and time accounting](docs/reference-protocols.md)

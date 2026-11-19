@@ -38,6 +38,29 @@ matlab -batch "run('main.m')"
 
 Save new simulation results, MATLAB logs and generated simulation figures outside OneDrive, under a fresh directory in `D:\Git_control\spin_dynamics\simulation_results\Mn3Sn` (WSL: `/mnt/d/Git_control/spin_dynamics/simulation_results/Mn3Sn`). For `main.m`, copy the root `.m` files into that external directory and run from the copy. Verification harnesses with explicit output arguments should receive the external path. Historical datasets are retained at their recorded locations.
 
+## Regression and timing benchmark
+
+Use the [deterministic benchmark](benchmark/README.md) to compare later code
+changes with saved baselines. It provides 4x4 quick and 8x8 production-size suites,
+each covering relaxation and a short nonuniform driven trajectory, with full
+saved-state comparisons and synchronized GPU timing. Run into a fresh external
+directory; accepted baselines are identified in
+[`benchmark/baseline_manifest.json`](benchmark/baseline_manifest.json).
+Raw baseline data must be available locally or transferred separately from Git.
+
+```matlab
+addpath('benchmark');
+run_baseline_benchmark('quick','D:/Git_control/spin_dynamics/simulation_results/Mn3Sn/benchmark/my-change-quick');
+manifest=jsondecode(fileread('benchmark/baseline_manifest.json'));
+passed=compare_to_baseline('D:/Git_control/spin_dynamics/simulation_results/Mn3Sn/benchmark/my-change-quick', ...
+    fullfile(pwd,manifest.quick.directory));
+assert(passed);
+```
+
+The benchmark preserves the production solver and parameters. It detects software
+regressions; it does not establish physical correctness. See the
+[benchmark evidence](docs/benchmark.md) for coverage and limitations.
+
 ## Model variants: exchange, anisotropy and boundaries
 
 The variants below evolve individual fixed-length spins with the same coupled LLGS solver, but use different boundary and interaction rules. Here $J$ is `Jintra`, $D$ is `Dsim`, $K$ is the uniform reference `Ksim`, and $z_i$ counts actual occupied exchange neighbors. **Nonuniform anisotropy means a site-dependent strength $K_i$**; the sublattice-dependent easy-axis directions are retained in every variant.
@@ -201,7 +224,7 @@ The most consequential audit findings are:
 - Dipole mode 1 returns different variable names from those consumed by integration; mode 2 is explicitly marked suspect; mode 3 uses the $y$ spin component for the $z$ moment.
 - `dwcalc=1` initializes occupied sites with collinear domain states and initializes empty slots as spins. It does not construct the published noncollinear chiral wall.
 - `loadstartm` defines a filename but never loads it. Loading a fixed distribution occurs after derived masks are built.
-- The production entry point still lacks a dedicated octupole output, orientation scan, wall-position measurement, accepted baseline, or CI. Named figure protocols and isolated verification scripts provide switching settings and automated checks.
+- The production entry point still lacks a dedicated octupole output, orientation scan, wall-position measurement, or CI. Named figure protocols and isolated verification scripts provide switching settings and automated checks; the separate benchmark provides accepted deterministic regression baselines.
 
 ## Audit verification
 
