@@ -88,6 +88,12 @@ Use the fields below where useful; omit inapplicable fields:
 - **Reference:** [CQ-02 follow-up](docs/configuration-results.md#cq-02-follow-up--2026-11-20).
 - **Test Strategy:** Exact pre-change preset comparisons, standalone and historical configuration checks, accepted frozen-input and quick trajectory regression, and viewer numeric/source consistency checks.
 
+### 2026-11-20 | Protected aliases and retained working state
+- **Type:** fix
+- **Description:** Resolve real parent directories before claiming outputs, closing junction aliases into protected source/reference trees. Retain two RK4 working states instead of full chunk histories while preserving sampled outputs and the existing CPU/GPU execution placement.
+- **Motivation:** Junctions could bypass output ownership, and full chunk histories retained unneeded states. Default working-state allocation is 3,072 bytes instead of 3,073,536 bytes; this is not a total process-memory claim.
+- **Reference:** [Validation, measurements and the deferred GPU-residency experiment](docs/retained-storage-verification.md).
+
 ---
 
 ## Section 2: Error & Solution Log

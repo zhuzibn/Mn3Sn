@@ -134,12 +134,20 @@ if dipolemode==3 %group atoms into macrocells
     clear ctL2 ctW2
 end
 
+% Supported RK4 retains two working states and only requested output frames.
+% Legacy solvers keep their historical storage; validation still rejects them.
+retain_only=rk4==1;
+next_saved=2;
+if retain_only
+    mmx_(:,:,1)=mx_init;mmy_(:,:,1)=my_init;mmz_(:,:,1)=mz_init;
+end
 ct3=1;
 while ~(ct3>ct3run)
 
-    mmx=zeros(natomW,natomL,gpusteps);
-    mmy=zeros(natomW,natomL,gpusteps);
-    mmz=zeros(natomW,natomL,gpusteps);
+    state_count=gpusteps;if retain_only,state_count=2;end
+    mmx=zeros(natomW,natomL,state_count);
+    mmy=zeros(natomW,natomL,state_count);
+    mmz=zeros(natomW,natomL,state_count);
 
     if ~(ct3==1)
         mmx(:,:,1)=tmp2xn0;mmy(:,:,1)=tmp2yn0;mmz(:,:,1)=tmp2zn0;
@@ -157,9 +165,11 @@ while ~(ct3>ct3run)
         BDSOT_step=BDSOT*drive_active;BFSOT_step=BFSOT*drive_active;
         BDSTT_step=BDSTT*drive_active;BFSTT_step=BFSTT*drive_active;
 
-        mmxtmp=mmx(:,:,ct1);
-        mmytmp=mmy(:,:,ct1);
-        mmztmp=mmz(:,:,ct1);
+        state_index=ct1;next_index=ct1+1;
+        if retain_only,state_index=1;next_index=2;end
+        mmxtmp=mmx(:,:,state_index);
+        mmytmp=mmy(:,:,state_index);
+        mmztmp=mmz(:,:,state_index);
 
         % The complete lattice must reach each RK stage before its fields
         % are evaluated. Intermediate states are deliberately not normalized.
@@ -300,18 +310,28 @@ while ~(ct3>ct3run)
         end
         end % RK stages; legacy solvers still perform one field evaluation
 
-        mmx(:,:,ct1+1)=sxx; mmy(:,:,ct1+1)=syy; mmz(:,:,ct1+1)=szz;
+        mmx(:,:,next_index)=sxx; mmy(:,:,next_index)=syy; mmz(:,:,next_index)=szz;
 
         if enablefixedge
-            mmx(:,1:fixededgeL,ct1+1)=mxleft;
-            mmy(:,1:fixededgeL,ct1+1)=myleft;
-            mmz(:,1:fixededgeL,ct1+1)=mzleft;
+            mmx(:,1:fixededgeL,next_index)=mxleft;
+            mmy(:,1:fixededgeL,next_index)=myleft;
+            mmz(:,1:fixededgeL,next_index)=mzleft;
 
-            mmx(:,natomL-fixededgeL:end,ct1+1)=mxright;
-            mmy(:,natomL-fixededgeL:end,ct1+1)=myright;
-            mmz(:,natomL-fixededgeL:end,ct1+1)=mzright;
+            mmx(:,natomL-fixededgeL:end,next_index)=mxright;
+            mmy(:,natomL-fixededgeL:end,next_index)=myright;
+            mmz(:,natomL-fixededgeL:end,next_index)=mzright;
+        end
+        if retain_only
+            if next_saved<=numel(saved_steps) && completed_steps+1==saved_steps(next_saved)
+                mmx_(:,:,next_saved)=gather(mmx(:,:,2));
+                mmy_(:,:,next_saved)=gather(mmy(:,:,2));
+                mmz_(:,:,next_saved)=gather(mmz(:,:,2));
+                next_saved=next_saved+1;
+            end
+            mmx(:,:,1)=mmx(:,:,2);mmy(:,:,1)=mmy(:,:,2);mmz(:,:,1)=mmz(:,:,2);
         end
         ct1=ct1+1;
+        if ~retain_only
         if ~(ct3==1 && ~(ct1>3)) && ct1>3
             tmpxn0=mmx(:,:,ct1);tmpyn0=mmy(:,:,ct1);tmpzn0=mmz(:,:,ct1);
             tmpxn1=mmx(:,:,ct1-1);tmpyn1=mmy(:,:,ct1-1);tmpzn1=mmz(:,:,ct1-1);
@@ -328,8 +348,10 @@ while ~(ct3>ct3run)
             tmpxn2=tmp2xn0;tmpyn2=tmp2yn0;tmpzn2=tmp2zn0;
             tmpxn3=tmp2xn1;tmpyn3=tmp2yn1;tmpzn3=tmp2zn1;
         end
+        end % legacy history only
     end
     tmp2xn0=mmx(:,:,end);tmp2yn0=mmy(:,:,end);tmp2zn0=mmz(:,:,end);
+    if ~retain_only
     tmp2xn1=mmx(:,:,end-1);tmp2yn1=mmy(:,:,end-1);tmp2zn1=mmz(:,:,end-1);
     tmp2xn2=mmx(:,:,end-2);tmp2yn2=mmy(:,:,end-2);tmp2zn2=mmz(:,:,end-2);
     block_start=(ct3-1)*steps_per_chunk;
@@ -339,6 +361,7 @@ while ~(ct3>ct3run)
     mmx_(:,:,output_indices)=gather(mmx(:,:,block_indices));
     mmy_(:,:,output_indices)=gather(mmy(:,:,block_indices));
     mmz_(:,:,output_indices)=gather(mmz(:,:,block_indices));
+    end % legacy dense output
     ct3=ct3+1;
 end
 

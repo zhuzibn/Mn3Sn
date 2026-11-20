@@ -42,7 +42,7 @@ cfg.protocol.natomW=8;
 result=mn3sn_run(cfg,'D:/Git_control/spin_dynamics/simulation_results/Mn3Sn/my-fig4a-run');
 ```
 
-**Output:** omitting the destination allocates a fresh `run-*` directory under `D:\Git_control\spin_dynamics\simulation_results\Mn3Sn` for this checkout. The single saved variable is `result` in `result.mat`. An explicit empty destination (`''` or `[]`) returns the result in memory without saving. Relative destinations resolve from the caller's directory. Existing files/directories, this source tree, OneDrive, and registered baseline trees are rejected before integration. The baseline manifest must be present for saved runs; baseline MAT files are needed only for regression comparisons.
+**Output:** omitting the destination allocates a fresh `run-*` directory under `D:\Git_control\spin_dynamics\simulation_results\Mn3Sn` for this checkout. The single saved variable is `result` in `result.mat`. An explicit empty destination (`''` or `[]`) returns the result in memory without saving. Relative destinations resolve from the caller's directory, and real existing ancestors resolve Windows junctions before ownership checks. Existing files/directories, this source tree, OneDrive, and registered baseline trees are rejected before integration. The baseline manifest must be present for saved runs; baseline MAT files are needed only for regression comparisons.
 
 Keep new data, MATLAB logs and generated figures outside OneDrive, in fresh directories. There is no restart reader. Historical `finalnew.mat` files remain untouched; consumers of their top-level variables must migrate to `result.mmx`, `result.atomtype`, `result.config`, etc. See the [configuration/result contract and validation](docs/configuration-results.md). Numerical defaults are unchanged.
 
@@ -58,6 +58,13 @@ isolation. It reports historical comparison as not requested. To additionally
 check the original migration, call `check_configuration(before_root)` with the
 preserved capture directory documented in the [validation report](docs/configuration-results.md#cq-02-follow-up--2026-11-20).
 A supplied missing or malformed capture fails the check.
+
+The RK4 integrator retains two working state planes and requested output frames.
+Default working-state storage is 3,072 bytes instead of 3,073,536 bytes; retained
+host output remains 155,136 bytes. The existing CPU/GPU execution placement is
+preserved after the GPU-resident experiment proved slower on these small cases.
+See [storage/guard verification](docs/retained-storage-verification.md) for the
+measurement scope, sampling checks and remaining GPU-residency limitation.
 
 ### Custom parameters
 

@@ -1,13 +1,16 @@
-# Mn3Sn pending work
+# Mn3Sn retained storage and output guards: completed
 
-CQ-02 preset validation and standalone configuration checks are complete within
-the approved deterministic scope. The [follow-up report](docs/configuration-results.md#cq-02-follow-up--2026-11-20)
-records the early type guard, independent CPU checks, retained historical
-comparison, exact quick trajectory regression, source snapshots and unchanged
-accepted baselines. No implementation task is active. No commit or push was made.
+Revision 1 was approved on 2026-11-20. Real-parent/junction guards and rolling
+RK4 working buffers are complete. The user explicitly selected the previous
+CPU/GPU execution placement after the GPU-resident experiment measured slower;
+GPU residency remains a CQ-03 limitation, not an unfinished approved stage.
 
-The earlier [CQ-01–04 implementation report](docs/configuration-results.md)
-retains the configuration/result migration and its scientific-validation scope.
+[The completion report](docs/retained-storage-verification.md) records the adopted
+model, source locators, decision, exact commands, measured buffers and limits.
+Both quick/current suites and repeats match accepted trajectories exactly;
+interface, aliases, sampling, static fields/energy, periodic/C replays, protocols,
+coupled convergence and viewer checks pass. Equations, defaults, accepted data
+and unsupported-path policy remain unchanged. No commit or push was made.
 
 ## Pending backlog
 
@@ -21,7 +24,7 @@ and scope the relevant item before starting substantial source changes.
 | Solver and torque restoration | Heun and predictor-corrector remain defective. The public API now rejects them; independent FL/DL and STT restoration remains separate work. | Restoring support requires selected-path, vacancy, flag and convergence checks; preserve explicit Gilbert damping cross terms. |
 | Optional paths | Thermal noise, dipoles, pinning, loaded distributions, restart and domain-wall initialization remain unvalidated. | Scope each requested path separately, including its physical conventions, occupied-spin/vacancy invariants and output contract. Domain walls require sourced sublattice states and physical coordinates. |
 | CI | No CI exists. The local validated configuration/output API is implemented. | Scope CI separately; do not infer that local GPU checks are portable automated coverage. |
-| Performance | Repeated transfers and workspace storage remain candidates for profiling. | Profile an agreed representative case first; any optimization must preserve fields, trajectories, clocks and vacancy handling. |
+| Performance | Working-history retention is complete. Repeated stage transfers remain; GPU residency was explicitly deferred after the measured slowdown. | Any new placement/kernel proposal needs representative measurements first; any optimization must preserve fields, trajectories, clocks and vacancy handling. |
 
 Additional publication studies (orientation scans, domain-wall motion or octupole
 observables) require a separate requested scope and acceptance criteria. Existing

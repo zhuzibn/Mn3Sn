@@ -41,7 +41,20 @@ assert(java.io.File(output_root).mkdir(),'Mn3Sn:OutputExists', ...
 end
 
 function value=canonical(value)
-value=char(java.io.File(value).getCanonicalPath());
+% Java's working directory can differ after MATLAB cd(). Resolve real existing
+% ancestors so junctions/symlinks cannot hide a protected destination.
+if ~java.io.File(value).isAbsolute(),value=fullfile(pwd,value);end
+value=char(java.io.File(value).getAbsolutePath());
+suffix={};ancestor=value;
+while ~isfolder(ancestor) && ~isfile(ancestor)
+    [parent,name,extension]=fileparts(ancestor);
+    assert(~strcmp(parent,ancestor),'Mn3Sn:OutputPath','Cannot resolve output ancestor.');
+    suffix=[{[name extension]} suffix]; %#ok<AGROW>
+    ancestor=parent;
+end
+ancestor=char(java.io.File(ancestor).toPath().toRealPath( ...
+    javaArray('java.nio.file.LinkOption',0)).toString());
+value=char(java.io.File(fullfile(ancestor,suffix{:})).getCanonicalPath());
 end
 
 function yes=within(child,parent)
