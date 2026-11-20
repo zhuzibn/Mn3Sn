@@ -59,6 +59,62 @@ check the original migration, call `check_configuration(before_root)` with the
 preserved capture directory documented in the [validation report](docs/configuration-results.md#cq-02-follow-up--2026-11-20).
 A supplied missing or malformed capture fails the check.
 
+### Custom parameters
+
+Start from a complete preset, override the desired fields, then call `mn3sn_run(cfg)` directly. Run the following in the MATLAB Command Window or your own script with this repository on the path. The custom values illustrate the interface; they are not a separately validated material parameter set.
+
+```matlab
+cfg=mn3sn_default_config('fig4a');
+
+% Material and torque parameters
+cfg.alp=0.005;                 % Gilbert damping
+cfg.thetaSH=0.08;              % Spin Hall angle
+cfg.tz=30e-9;                 % Film thickness, m
+cfg.Ksim=1.1*cfg.Ksim;         % Increase default anisotropy energy by 10%
+
+% Array size and initial orientation
+cfg.protocol.natomW=12;
+cfg.protocol.natomL=12;
+cfg.protocol.seed_deg=210;     % First-spin angle, degrees
+
+% Applied current and field
+cfg.protocol.current=4e10;       % A/m^2
+cfg.protocol.field=[0 0.02 0];   % [Bx By Bz], tesla
+
+% Timing; current and field share the pulse gate
+cfg.protocol.pulse_start=1e-9; % s, inclusive
+cfg.protocol.pulse_end=4e-9;   % s, exclusive
+cfg.protocol.runtime=5e-9;     % s
+cfg.protocol.tstep=5e-15;      % s
+cfg.protocol.gpusave=10e-12;   % Integration chunk duration, s
+cfg.protocol.savetstep=50;     % Save every 50 updates (0.25 ps here)
+
+% Optional CPU-only validation and initialization; no integration or output
+state=mn3sn_initialize(cfg);
+
+% GPU integration; saves result.mat in a fresh external run directory
+result=mn3sn_run(cfg);
+```
+
+Call `mn3sn_run(cfg)` after applying overrides. Running `main.m` at that point would recreate `cfg` with the default relaxation settings. Use `mn3sn_run(cfg,'')` to return the result in memory without saving, or supply a fresh output path as shown above. The result records public inputs in `result.requested_config` and effective parameters in `result.config`.
+
+Material/control inputs are top-level `cfg` fields; dimensions, initial angle, drives and timing belong in `cfg.protocol`. See [`mn3sn_default_config.m`](mn3sn_default_config.m) for the complete editable field list. Other common inputs are:
+
+| Field | Meaning / units |
+|---|---|
+| `cfg.Jintra` | Exchange energy parameter, J; periodic bonds use `Jintra/2` |
+| `cfg.Dsim` | DMI energy parameter, J; periodic bonds use `Dsim/2` |
+| `cfg.Ksim` | Scalar onsite anisotropy energy coefficient, J, not an energy density |
+| `cfg.musRE` | Occupied Mn spin moment, J/T; `RE` is a legacy name |
+| `cfg.msRE` | Magnetization used in the torque coefficient, A/m |
+| `cfg.gamRE` | Gyromagnetic ratio, rad/(s T) |
+| `cfg.psjSHE` | SOT polarization, a unit `1x3` row vector |
+
+- With periodic boundaries (`cfg.bc=0`), `natomW` must be at least four and divisible by four; `natomL` must be even and at least four.
+- `runtime/gpusave` and `gpusave/tstep` must be integer counts, with at least two updates per chunk. `savetstep` must be a positive integer. Pulse edges are rounded to update indices; choose timestep-aligned edges for exact requested timing.
+- Keep the preset's `cfg.protocol.name`: it records the starting preset, while explicit overrides determine the run. `'custom'` is not an accepted name. Physical/numerical values must be full, real doubles; unknown or missing fields are rejected.
+- Only deterministic coupled RK4 (`cfg.rk4=1`) is supported. Configuration validation does not establish timestep convergence for custom parameters; thermal noise and other unsupported options remain rejected.
+
 ## Regression and timing benchmark
 
 Use the [deterministic benchmark](benchmark/README.md) to compare later code
