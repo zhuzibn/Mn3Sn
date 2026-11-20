@@ -46,6 +46,19 @@ result=mn3sn_run(cfg,'D:/Git_control/spin_dynamics/simulation_results/Mn3Sn/my-f
 
 Keep new data, MATLAB logs and generated figures outside OneDrive, in fresh directories. There is no restart reader. Historical `finalnew.mat` files remain untouched; consumers of their top-level variables must migrate to `result.mmx`, `result.atomtype`, `result.config`, etc. See the [configuration/result contract and validation](docs/configuration-results.md). Numerical defaults are unchanged.
 
+Check the current configuration interface with MATLAB, without a GPU or external
+data:
+
+```bash
+matlab -wait -batch "addpath('verification'); check_configuration;"
+```
+
+This covers valid presets, invalid inputs, effective overrides and caller
+isolation. It reports historical comparison as not requested. To additionally
+check the original migration, call `check_configuration(before_root)` with the
+preserved capture directory documented in the [validation report](docs/configuration-results.md#cq-02-follow-up--2026-11-20).
+A supplied missing or malformed capture fails the check.
+
 ## Regression and timing benchmark
 
 Use the [deterministic benchmark](benchmark/README.md) to compare later code
@@ -103,6 +116,11 @@ Select a preset with `cfg=mn3sn_default_config(name,value)`, then pass `cfg` to 
 | `mn3sn_protocol('fig5c',seed)` | `seed` | −5e10 | +1000 Oe |
 
 Choose `seed` from `30:60:330` degrees (default 210), and Fig. 5(a) `field` from `175:25:400`, 450, or 500 Oe (default 250). These are first-spin angles; the relaxed mean-spin angle is `60-seed` modulo 360 degrees. The other spins are offset by 120 degrees. Figure 4(b)'s ferromagnet is excluded.
+
+Nonempty preset values must be full, real, finite `double` scalars. Single,
+integer, sparse and other invalid value types fail immediately with
+`Mn3Sn:ProtocolValue`, before configuration construction or field conversion.
+Omitting the value or passing `[]` retains the preset default.
 
 All presets use **8×8 slots, 48 occupied spins**, with periodic boundaries in both array directions. Relaxation retains its 10 ps runtime, 0.5 fs steps and 100 fs sampling; this short default is a smoke example, not enough to establish settling. Figure presets use 5 ns runtime, 5 fs steps and 0.25 ps sampling. Current and field are on for updates beginning in `[1 ns,4 ns)` and off otherwise. Initial ideal 120-degree seeds retain startup ringing.
 

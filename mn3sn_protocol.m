@@ -2,6 +2,7 @@ function p=mn3sn_protocol(name,value)
 % One 48-spin periodic relaxation or PRB 109, 134433 (2024) figure trajectory.
 % For fig2d/fig5b/fig5c, value is the first-spin seed in degrees.
 % For fig5a, value is the field in Oe. Other presets take no value.
+% Nonempty values must be full, real, finite double scalars.
 if nargin<1, name='relaxation'; end
 if nargin<2, value=[]; end
 assert((ischar(name) && isrow(name)) || (isstring(name) && isscalar(name) && ~ismissing(name)), ...
@@ -9,17 +10,19 @@ assert((ischar(name) && isrow(name)) || (isstring(name) && isscalar(name) && ~is
 name=char(name);
 assert(ismember(name,{'relaxation','fig2a','fig2b','fig2c','fig2d','fig4a','fig5a','fig5b','fig5c'}), ...
     'Mn3Sn:Protocol','Unknown protocol name: %s.',name);
+if ~isempty(value)
+    assert(isa(value,'double') && isreal(value) && ~issparse(value) && isscalar(value) && isfinite(value), ...
+        'Mn3Sn:ProtocolValue','Protocol value must be a full, real, finite double scalar, or empty for the default.');
+end
 p=struct('name',name,'natomW',8,'natomL',8,'seed_deg',270, ...
     'current',5e10,'field',[0 .01 0],'pulse_start',1e-9,'pulse_end',4e-9, ...
     'runtime',5e-9,'tstep',5e-15,'gpusave',10e-12,'savetstep',50);
 if ismember(name,{'fig2d','fig5b','fig5c'})
     if isempty(value),value=210;end
-    validateattributes(value,{'numeric'},{'scalar','real','finite'});
     assert(ismember(value,30:60:330),'Mn3Sn:Seed','Choose a seed from 30:60:330 degrees.');
     p.seed_deg=value;
 elseif strcmp(name,'fig5a')
     if isempty(value),value=250;end
-    validateattributes(value,{'numeric'},{'scalar','real','finite'});
     assert(ismember(value,[175 200 225 250 275 300 325 350 375 400 450 500]), ...
         'Mn3Sn:Field','Choose a tested Fig. 5(a) field: 175:25:400, 450 or 500 Oe.');
 else

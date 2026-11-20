@@ -32,7 +32,10 @@ stride. Material/control inputs are top-level fields in
 [`mn3sn_default_config.m`](../mn3sn_default_config.m). Derived coefficients and
 counts belong to `state.config` / `result.config`; they are not editable duplicate
 inputs. `protocol.name` records preset origin; explicit field overrides are the
-actual input. Preset names must match exactly, including case.
+actual input. Preset names must match exactly, including case. Nonempty preset
+values must be full, real, finite double scalars; `mn3sn_protocol` and the default
+factory reject other types with `Mn3Sn:ProtocolValue` before seed assignment or
+field conversion. Omitted/empty values retain their preset defaults.
 
 [`mn3sn_validate_config.m`](../mn3sn_validate_config.m) rejects missing/unknown
 fields, malformed numeric inputs, nonunit polarizations, invalid dimensions and
@@ -305,6 +308,137 @@ An independent read-only verifier reviewed the approved scope, source/tests,
 protected hashes and documentation. Its findings were resolved without concurrent
 writers or changes to physics. The shared matrix owner can use this report as
 evidence for CQ-01–04 adoption; no shared matrix update is included here.
+
+## CQ-02 follow-up — 2026-11-20
+
+The user approved the scoped plan against HEAD
+`e477b6f1e508098997262a06bd600c9760ce9d21`. The shared matrix still described the
+pre-migration production interface; current source already had the configuration
+factory, validator and callable runner. This follow-up closes two narrower gaps.
+
+`mn3sn_protocol` previously accepted generic numeric preset values. For example,
+`mn3sn_default_config('fig5a',uint16(300))` returned an integer zero field because
+of arithmetic in the input type. The production validator then rejected that
+configuration before integration. Single and sparse values similarly produced
+configurations rejected downstream. A single early guard now enforces the
+existing full, real, finite double scalar contract, reporting
+`Mn3Sn:ProtocolValue`. Valid double values, selection errors and omitted/empty
+defaults retain their original behavior; no automatic type conversion is added.
+
+`check_configuration()` now runs current-interface checks without external data
+or GPU calls. It reports `Historical initialization comparison: not requested`.
+The explicit `check_configuration(before_root)` form additionally checks the
+original 35 preset records and four open/short initialization controls. Missing,
+empty or structurally incomplete captures fail; they cannot turn into a skipped
+comparison. The historical argument remains separate from production inputs.
+
+The only production-source edit is the preset guard in `mn3sn_protocol.m`.
+`verification/check_configuration.m` retains its prior checks and adds preset
+coverage. README documents the types and two check modes; the changelog records
+the fix. `docs/mn3sn-data.js` retains all numerical data while updating the
+protocol source/hash through the existing exporter for the
+[open cell](unit-cell.html) and [interaction viewer](structure-exchange.html).
+The default factory, validator, initializer, runner, physics kernels, benchmark
+and output guards retain their source bytes. Valid-input numerics and defaults
+are unchanged. Existing ignore rules already cover generated
+and cache directories; no instruction or ignore-file change is needed.
+
+### Follow-up evidence and commands
+
+All new artifacts are in
+`D:/Git_control/spin_dynamics/simulation_results/Mn3Sn/cq02-20261120-6o2898i6`
+(`task` below). `approved-plan.md`, `source-before/`, `factory-before.mat`,
+`check_configuration-before.m`, `mn3sn-data-before.js` and
+`protected-before.json` preserve the approved scope and pre-change evidence.
+The historical fixture remains read-only at
+`D:/Git_control/spin_dynamics/simulation_results/Mn3Sn/cq01-04-20261119-implementation/before`.
+No capture or accepted baseline was generated, replaced or promoted.
+
+Environment: Windows MATLAB `24.2.0.2740171 (R2024b) Update 1`, Parallel Computing
+Toolbox 24.2, NVIDIA GeForce RTX 3060 Laptop GPU (compute capability 8.6, graphics
+driver 610.60, MATLAB toolkit 12.2, 6 GiB). The GPU preflight reported no running
+GPU processes; only this sequential benchmark was launched. Node and Python's
+standard library supplied data/source checks without dependency installation.
+
+MATLAB commands use the installed WSL launcher with Windows paths:
+
+```bash
+matlab -wait -logfile 'D:/Git_control/spin_dynamics/simulation_results/Mn3Sn/cq02-20261120-6o2898i6/before.log' -batch "run('D:/Git_control/spin_dynamics/simulation_results/Mn3Sn/cq02-20261120-6o2898i6/capture_before.m')"
+matlab -wait -logfile 'D:/Git_control/spin_dynamics/simulation_results/Mn3Sn/cq02-20261120-6o2898i6/preset-patch.log' -batch "run('D:/Git_control/spin_dynamics/simulation_results/Mn3Sn/cq02-20261120-6o2898i6/check_preset_patch.m')"
+matlab -wait -logfile 'D:/Git_control/spin_dynamics/simulation_results/Mn3Sn/cq02-20261120-6o2898i6/interface.log' -batch "run('D:/Git_control/spin_dynamics/simulation_results/Mn3Sn/cq02-20261120-6o2898i6/check_interface.m')"
+matlab -wait -logfile 'D:/Git_control/spin_dynamics/simulation_results/Mn3Sn/cq02-20261120-6o2898i6/regression.log' -batch "run('D:/Git_control/spin_dynamics/simulation_results/Mn3Sn/cq02-20261120-6o2898i6/check_regression.m')"
+```
+
+These retained harnesses record the exact calls and fixtures. `capture_before.m`
+ran before the source edit and must not be rerun as a replacement capture. The
+interface harness first resets the MATLAB path and runs a source-only copy with
+neither `capture.mat` nor a benchmark directory. It then checks four invalid
+historical arguments and the valid original capture. The regression harness
+compares CPU initialization with all four accepted quick/current inputs, exports
+viewer data externally, runs Code Analyzer on the two edited MATLAB files, then
+runs the unchanged quick GPU suite and asserts its full-trajectory comparator.
+Use fresh child paths for future output-producing checks.
+
+| Check | Observed result / artifact |
+|---|---|
+| Pre-change configuration and reproduction | Existing 35 historical presets, four initialization controls and 60 invalid configurations pass; six single/integer/sparse constructor-versus-validator mismatches reproduced (`before.log`) |
+| Valid factory preservation | All 35 complete configurations equal the saved pre-change outputs exactly; 80 focused typed rejections pass (`preset-patch.log`) |
+| Standalone current checks | 35 valid presets, 132 rejected preset calls and 60 rejected configurations pass, including effective overrides and workspace isolation; no historical comparison claimed (`interface.log`) |
+| Explicit historical checks | Same current checks pass plus exact comparison of 35 records/four controls; nonexistent, malformed, numeric-empty and empty-text fixture arguments all fail (`interface.log`) |
+| Accepted CPU inputs | Complete effective configuration, initial spins and mapping match all four quick/current cases (`regression.log`) |
+| Viewer export and consistency | Fresh MATLAB impulse checks pass for ten open sizes; Node deep comparison finds only `sources.mn3sn_protocol` and `hashes.mn3sn_protocol` changed; current-source/excerpt and 183,850 operator-entry checks pass (`viewer-check.json`) |
+| Code Analyzer | No syntax errors in either changed MATLAB file; protocol has no diagnostics, configuration check has three style/performance diagnostics (`checkcode.json`) |
+| Quick GPU trajectory regression | Both cases pass; every trajectory component, occupied/class mean and time matches the accepted baseline exactly. All three warm repeats of each case have zero trajectory difference. Norm errors are 1.11e-16 (relaxation) and 2.22e-16 (driven); vacancies remain exactly zero (`quick-comparison.json`, `quick/metadata.json`) |
+| Source and baseline preservation | All 27 protected files other than the intentionally edited protocol retain their hashes, including the manifest and all six accepted artifacts. Every root MATLAB file matches the final benchmark snapshot byte-for-byte (`preservation-after.json`) |
+
+The Node comparison loaded old/new `window.MN3SN_DATA` in separate VM contexts,
+converted them to plain JSON objects, removed only the two protocol source/hash
+entries, and required deep equality before copying the generated file into the
+repository. The new excerpt and hash were also checked against the actual source.
+Then `node docs/check_visualization_data.cjs` verified the installed snapshot.
+No browser/layout change was made. Code Analyzer's diagnostics are the existing
+compact `try,` style plus the same style in the new helper and one cell-array
+construction suggestion; no diagnostics were suppressed.
+
+All four MATLAB harness processes exited 0. The quick suite used the existing
+20,000-update/101-frame relaxation and 60-update/61-frame driven cases, including
+the latter's 31 active pulse updates. The unchanged comparator enforces full
+trajectory/mean error <=1e-10, occupied norm error <=1e-12, exact vacancy zeros,
+configuration/mapping/count compatibility and clock roundoff limits. The observed
+trajectory and clock errors were zero. Current-size inputs were checked on CPU;
+current-size trajectories were not rerun.
+
+Timing is informational: warm medians were 97.338478 s for relaxation and
+0.252224 s for the driven case, versus accepted 61.620746 s and 0.185429 s. No
+performance improvement is claimed and no tolerance or repeat count was changed.
+The final protocol SHA-256 is
+`618adcdd017655a342ae3048c4e9aa83c89eb13ad3b3e7c66d04b6ea317085cb`;
+the configuration check is
+`3ba25e404408a2268ee5324365c51294fac44c17f866675420ac8142cf53b58f`.
+Local documentation links, preserved LF line endings, `git diff --stat`,
+`git diff --check` and the untracked-file list were reviewed. The completed task
+has been removed from the active plan; its approved specification remains in the
+external artifact directory named above and its outcome is recorded here.
+
+The model remains Class 3, fixed-length LLGS on the existing spatial code graph.
+No material value, field/torque expression, damping cross term, boundary rule,
+initialization, time grid or solver algorithm changes. The equation files and
+labels listed in the earlier Model and evidence boundary section were consulted
+to preserve those conventions. The local processed
+[Mn3Sn synthesis](/mnt/d/Git_control/paper-knowledge-base/topics/mn3sn-spin-orbit-torque-switching.md)
+was read for model-scope context; the index located the PRB 109, 134433 (2024)
+record and the two APL records cited in README. Indexed per-paper summaries,
+extractions and PDFs remain outside the authorized processed KB root and were
+not opened. The reviewed EE237 Week 15a summary/slides 25–27 and Week 11
+summary/slide 19 supplied secondary context only. No source deck, new literature
+parameter or online evidence was adopted.
+
+Physical lattice/basis/stacking, crystallographic site assignment, exchange-shell
+normalization and physical DMI/edge registry remain **REFERENCE MISSING**. These
+existing limitations do not affect the software-only guard. Full switching
+sweeps, current-size timing, multi-GPU behavior, browser rendering and a new
+physics/convergence audit are outside this follow-up. No commit, push, dependency
+installation, network access or shared-matrix edit is part of the task.
 
 [catalog]: /home/zhuzibn/.agents/skills/spin-dynamics-development/references/code-quality.md
 [matrix]: /mnt/d/Git_control/spin_dynamics/docs/repository-quality-matrix.md

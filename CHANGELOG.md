@@ -81,6 +81,13 @@ Use the fields below where useful; omit inapplicable fields:
 - **Reference:** [Configuration, migration and validation](docs/configuration-results.md).
 - **Test Strategy:** Exact pre-migration initialization/short-trajectory captures; accepted quick/current full-trajectory comparisons; configuration, persistence, provenance and path rejection tests; existing protocol, field, periodic and coupled-RK4 checks; viewer data preservation and independent read-only review.
 
+### 2026-11-20 | Consistent preset input validation
+- **Type:** fix
+- **Description:** Named presets reject nonempty values that are not full, real, finite double scalars before constructing a configuration or converting fields. The configuration check now runs without external data; explicitly requested historical comparisons remain strict.
+- **Motivation:** Single, integer and sparse preset values could produce configurations that only failed downstream; integer field conversion could already yield zero. Current input checks also unnecessarily required an external migration capture.
+- **Reference:** [CQ-02 follow-up](docs/configuration-results.md#cq-02-follow-up--2026-11-20).
+- **Test Strategy:** Exact pre-change preset comparisons, standalone and historical configuration checks, accepted frozen-input and quick trajectory regression, and viewer numeric/source consistency checks.
+
 ---
 
 ## Section 2: Error & Solution Log

@@ -1,11 +1,13 @@
 # Mn3Sn pending work
 
-CQ-01–04 adoption is complete within the approved deterministic scope. The
-[implementation and validation report](docs/configuration-results.md) records the
-configuration/result interface, unchanged accepted baselines, exact comparisons,
-scientific checks, provenance and limitations. Browser rendering and multi-GPU
-behavior were not verified. No commit or push was made. The approved detailed
-plan is preserved with the external validation artifacts named in that report.
+CQ-02 preset validation and standalone configuration checks are complete within
+the approved deterministic scope. The [follow-up report](docs/configuration-results.md#cq-02-follow-up--2026-11-20)
+records the early type guard, independent CPU checks, retained historical
+comparison, exact quick trajectory regression, source snapshots and unchanged
+accepted baselines. No implementation task is active. No commit or push was made.
+
+The earlier [CQ-01–04 implementation report](docs/configuration-results.md)
+retains the configuration/result migration and its scientific-validation scope.
 
 ## Pending backlog
 
@@ -29,6 +31,7 @@ switching comparisons do not establish those capabilities.
 
 The following work is complete within each report's documented scope. It is not pending work.
 
+- [CQ-02 preset validation and standalone configuration checks](docs/configuration-results.md#cq-02-follow-up--2026-11-20)
 - [CQ-01–04 configuration, production results and protected output](docs/configuration-results.md)
 - [Deterministic regression and timing benchmark](docs/benchmark.md)
 - [Structure viewers and usage](README.md#interactive-structure-and-interactions)
